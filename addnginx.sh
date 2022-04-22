@@ -93,6 +93,7 @@ open_proxy_ssl_server_name(){
 start_nginx(){
     systemctl enable nginx
     systemctl start nginx
+    nginx -s reload
 }
 
 # 
