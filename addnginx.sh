@@ -3,7 +3,7 @@
 
 weburl=$1
 webport=$2
-configureName=$3
+configureName=$3.conf
 filePath=/etc/nginx/conf.d/${configureName}
 
 
