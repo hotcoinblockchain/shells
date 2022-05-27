@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# auto install nginx proxy for chain nodes;
+# auto install nginx proxy for chain nodes; 
 # curl https://raw.githubusercontent.com/hotcoin-walle/shells/main/addnginx.sh | bash -s https\\:\\/\\/wallet.cypress.klaytn.net:8651 10082 klay
 
 weburl=$1
