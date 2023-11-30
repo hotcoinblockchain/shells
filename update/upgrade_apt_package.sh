@@ -2,13 +2,13 @@
 
 ### tips ### 
 ## usage 
-# curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/upgrade_apt_package.sh | bash -s nginx
+# curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/update/upgrade_apt_package.sh | bash -s nginx
 
 ## mul
 
 # packages=("package1" "package2" "package3")  # array of packages
 # for package in "${packages[@]}"; do
-#     curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/upgrade_apt_package.sh | bash -s "$package"  
+#     curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/update/upgrade_apt_package.sh | bash -s "$package"  
 # done
 
 

@@ -3,7 +3,7 @@
 
 ### 
 # usage 
-# curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/install_go.sh | bash -s 1.20.7
+# curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/install/go.sh | bash -s 1.20.7
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <version>"
     exit 1
