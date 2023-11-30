@@ -1,5 +1,18 @@
 #!/bin/bash
 
+### tips ### 
+## usage 
+# curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/upgrade_apt_package.sh | bash -s nginx
+
+## mul
+
+# packages=("package1" "package2" "package3")  # array of packages
+# for package in "${packages[@]}"; do
+#     curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/upgrade_apt_package.sh | bash -s "$package"  
+# done
+
+
+
 packageName=$1
 version=$2
 
