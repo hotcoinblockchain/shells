@@ -1,4 +1,9 @@
 #! /bin/bash
+
+### 
+# usage 
+# curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/install/tinyproxy.sh | bash -s 
+
 check_sys() {
         if [ -f "/etc/redhat-release" ]; then
                 release="centos"
