@@ -8,7 +8,7 @@ sudo apt-get install -y libleveldb-dev sqlite3 libsqlite3-dev libunwind8-dev
 sudo apt-get install -y librocksdb-dev 
 
 
-sudo apt-get install libleveldb-dev libssl-dev
+sudo apt-get install -y libleveldb-dev libssl-dev
 
 
 
