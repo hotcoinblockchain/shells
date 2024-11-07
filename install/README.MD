@@ -1,9 +1,16 @@
 # Usage
 
+## ubuntu basic dependcy
+```
+curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/install/ubuntu-basic-dependcy.sh | bash -s 
+```
+
 ## tinyproxy
 ```
 curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/install/tinyproxy.sh | bash -s 
 ```
+
+
 
 ## git
 ``` shell
