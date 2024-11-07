@@ -1,5 +1,12 @@
 # Usage
 
+## auto parted /dev/vdb
+```
+curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/install/auto_parted.sh | bash -s 
+
+```
+
+
 ## ubuntu basic dependcy
 ```
 curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/install/ubuntu-basic-dependcy.sh | bash -s 
