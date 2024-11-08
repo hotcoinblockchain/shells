@@ -1,5 +1,11 @@
 # Usage
 
+## software
+```
+apt install screen supervisor firewalld
+apt install nginx
+```
+
 ## auto parted /dev/vdb
 ```
 curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/install/auto_parted.sh | bash -s 
