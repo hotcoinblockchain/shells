@@ -2,8 +2,8 @@
 
 ## software
 ```
-apt install screen supervisor firewalld
-apt install nginx
+apt install screen supervisor firewalld -y
+apt install nginx -y
 ```
 
 ## auto parted /dev/vdb
