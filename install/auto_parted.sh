@@ -1,5 +1,9 @@
 #!/bin/bash
 
+
+### curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/install/auto_parted.sh | bash -s 
+
+
 # 检查是否具有 root 权限
 if [ "$(id -u)" -ne 0 ]; then
     echo "请以 root 用户执行此脚本。"
