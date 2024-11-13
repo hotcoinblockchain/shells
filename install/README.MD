@@ -43,7 +43,7 @@ curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/install/gi
 
 ## GOLANG
 ```
-curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/install/go.sh | bash -s 1.23.2
+curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/install/go.sh | bash -s 1.23.2 && source /etc/profile
 
 ```
 
