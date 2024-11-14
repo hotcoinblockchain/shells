@@ -13,7 +13,7 @@ sudo apt-get install -y libleveldb-dev libssl-dev
 
 
 sudo apt-get install -y software-properties-common
-sudo add-apt-repository ppa:bitcoin/bitcoin
+# sudo add-apt-repository ppa:bitcoin/bitcoin
 sudo apt-get update
 sudo apt-get install -y build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils python3 libboost-all-dev
 
