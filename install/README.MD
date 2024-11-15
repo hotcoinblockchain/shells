@@ -5,7 +5,9 @@
 apt install screen supervisor firewalld -y
 apt install nginx -y
 
-apt install screen glances iftop vnstat bpytop -y
+apt install screen glances iftop vnstat -y
+
+pip3 install bpytop
 
 
 # sudo vnstat -u -i eth0  # 替换 eth0 为你的网络接口
