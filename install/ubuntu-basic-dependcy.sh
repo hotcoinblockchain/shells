@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/install/ubuntu-basic-dependcy.sh | bash -s 
+# curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/ubuntu-basic-dependcy.sh | bash -s 
 
 
 sudo apt install -y g++ gcc cmake wget curl supervisor screen firewalld nginx
