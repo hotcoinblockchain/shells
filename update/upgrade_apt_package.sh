@@ -2,7 +2,7 @@
 
 ### tips ### 
 ## usage 
-# curl -sSL https://raw.githubusercontent.com/hotcoin-walle/shells/main/update/upgrade_apt_package.sh | bash -s nginx
+# curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/update/upgrade_apt_package.sh | bash -s nginx
 
 ## mul
 
