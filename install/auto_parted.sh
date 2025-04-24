@@ -32,8 +32,20 @@ if [[ "$DEVICE" != "/dev/vdb" && "$MOUNT_POINT" == "/coins" ]]; then
     exit 1
 fi
 
+# 获取分区设备名
+get_partition_device() {
+    local device=$1
+    if [[ "$device" =~ ^/dev/nvme[0-9]+n[0-9]+$ ]]; then
+        echo "${device}n1"  # NVMe 设备格式为 nvme0n1n1
+    else
+        echo "${device}1"   # 传统设备格式为 sda1, vda1 等
+    fi
+}
+
+PARTITION_DEVICE=$(get_partition_device "$DEVICE")
+
 # 检查磁盘是否已有分区
-if lsblk -no NAME "${DEVICE}1" &>/dev/null; then
+if lsblk "$DEVICE" | grep -q "part"; then
     if [[ "$FORCE_PARTITION" != "--force" ]]; then
         echo "检测到 ${DEVICE} 已经被分区。使用 --force 参数可以强制重新分区。"
         exit 0
@@ -56,18 +68,31 @@ partprobe "$DEVICE"
 
 echo "分区操作完成。"
 
+# 等待系统识别新分区
+echo "等待系统识别新分区..."
+sleep 3
+
+# 获取实际分区设备名
+ACTUAL_PARTITION=$(lsblk -nlo NAME "$DEVICE" | grep -v "^$(basename "$DEVICE")$" | head -n1)
+if [ -n "$ACTUAL_PARTITION" ]; then
+    PARTITION_DEVICE="/dev/$ACTUAL_PARTITION"
+else
+    echo "错误：无法检测到分区设备"
+    exit 1
+fi
+
 # 创建一个 ext4 文件系统
-mkfs -t ext4 "${DEVICE}1"
+mkfs -t ext4 "$PARTITION_DEVICE"
 
 # 挂载分区
 mkdir -p "$MOUNT_POINT"
-mount "${DEVICE}1" "$MOUNT_POINT"
+mount "$PARTITION_DEVICE" "$MOUNT_POINT"
 
 # 备份 fstab 文件
 cp -a /etc/fstab /etc/fstab.bak
 
 # 生成新的挂载记录
-NEW_ENTRY="$(blkid "${DEVICE}1" | awk '{print $2}' | sed 's/\"//g') $MOUNT_POINT ext4 defaults 0 0"
+NEW_ENTRY="$(blkid "$PARTITION_DEVICE" | awk '{print $2}' | sed 's/\"//g') $MOUNT_POINT ext4 defaults 0 0"
 
 # 检查是否已有相同的挂载记录
 if grep -Fxq "$NEW_ENTRY" /etc/fstab; then
