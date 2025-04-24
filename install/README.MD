@@ -16,7 +16,12 @@ systemctl enable vnstat
 
 apt install nginx -y
 ```
-
+## vim setup
+```
+curl -sSL etup
+```
+curl -sSL URL_ADDRESS.githubusercontent.com/hotcoinblockchain/shells/main/install/vim.sh | bash -s
+```
 ## auto parted /dev/vdb
 ```
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/auto_parted.sh | bash -s 
