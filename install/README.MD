@@ -18,7 +18,7 @@ apt install nginx -y
 ```
 ## vim setup
 ``` shell
-curl -sSL URL_ADDRESS.githubusercontent.com/hotcoinblockchain/shells/main/install/vim.sh | bash -s
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/vim_set.sh | bash -s
 ```
 ## auto parted /dev/vdb
 ``` shell
@@ -39,7 +39,7 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/instal
 
 ## fail2ban
 ``` shell
-curl -sSL URL_ADDRESS.githubusercontent.com/hotcoinblockchain/shells/main/install/fail2ban.sh | bash -s
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/fail2ban.sh | bash -s
 ```
 
 
@@ -57,7 +57,7 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/instal
 
 ## Rust&Cargo
 ``` shell
-curl -sSf https://static.rust-lang.org/rustup.sh | sh
+curl https://sh.rustup.rs -sSf | sh
 ```
 
 ## nodejs
