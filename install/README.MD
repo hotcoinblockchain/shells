@@ -1,7 +1,7 @@
 # Usage
 
 ## software
-```
+``` shell
 apt install screen supervisor firewalld -y
 
 apt install screen glances iftop vnstat -y
@@ -17,28 +17,30 @@ systemctl enable vnstat
 apt install nginx -y
 ```
 ## vim setup
-```
-curl -sSL etup
-```
+``` shell
 curl -sSL URL_ADDRESS.githubusercontent.com/hotcoinblockchain/shells/main/install/vim.sh | bash -s
 ```
 ## auto parted /dev/vdb
-```
+``` shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/auto_parted.sh | bash -s 
 
-```
+``` shell
 
 
 ## ubuntu basic dependcy
-```
+``` shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/ubuntu-basic-dependcy.sh | bash -s 
 ```
 
 ## tinyproxy
-```
+``` shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/tinyproxy.sh | bash -s 
 ```
 
+## fail2ban
+``` shell
+curl -sSL URL_ADDRESS.githubusercontent.com/hotcoinblockchain/shells/main/install/fail2ban.sh | bash -s
+```
 
 
 ## git
@@ -48,22 +50,22 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/instal
 
 
 ## GOLANG
-```
+``` shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/go.sh | bash -s 1.23.2 && source /etc/profile
 
 ```
 
 ## Rust&Cargo
-```
+``` shell
 curl -sSf https://static.rust-lang.org/rustup.sh | sh
 ```
 
 ## nodejs
-```
+``` shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/nodejs.sh | bash -s 
 ```
 
 ## docker
-```
+``` shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | bash -s 
 ```
