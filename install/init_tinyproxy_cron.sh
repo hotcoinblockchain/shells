@@ -16,7 +16,7 @@ if [ ! -f "$MONITOR_SCRIPT" ]; then
     cat << 'EOF' > "$MONITOR_SCRIPT"
 #!/bin/bash
 
-HOOK_URL=$1
+HOOK_URL=WEB_HOOK_URL
 LOG_FILE="/var/log/tinyproxy_monitor.log"
 
 get_local_ip() {
@@ -90,6 +90,7 @@ EOF
 
     chmod +x "$MONITOR_SCRIPT"
     echo "已写入 $MONITOR_SCRIPT"
+    sed -i "s@WEB_HOOK_URL@$1@g" "$MONITOR_SCRIPT"
 fi
 
 # 检查是否已存在 crontab 任务
