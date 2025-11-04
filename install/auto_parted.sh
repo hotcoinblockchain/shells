@@ -11,7 +11,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # 设置默认值
-DEVICE="/dev/vdb"
+DEVICE=""
 MOUNT_POINT="/coins"
 FORCE_PARTITION=""
 
@@ -26,10 +26,21 @@ for arg in "$@"; do
     fi
 done
 
-# 如果设备不是 /dev/vdb 且没有提供挂载路径，则提示用户输入挂载路径
-if [[ "$DEVICE" != "/dev/vdb" && "$MOUNT_POINT" == "/coins" ]]; then
-    echo "非 vdb 设备，请提供挂载路径，例如 /mnt/mydisk"
-    exit 1
+# 自动识别设备类型（若未手动指定）
+if [[ -z "$DEVICE" ]]; then
+    if [ -b /dev/nvme1n1 ]; then
+        DEVICE="/dev/nvme1n1"
+        echo "检测到 NVMe 设备：$DEVICE"
+    elif [ -b /dev/vdb ]; then
+        DEVICE="/dev/vdb"
+        echo "检测到普通云盘设备：$DEVICE"
+    else
+        echo "❌ 未检测到可用的数据盘 (/dev/nvme1n1 或 /dev/vdb)。"
+        echo "请手动执行：bash auto_parted.sh /dev/<your-disk> /mnt/path"
+        exit 1
+    fi
+else
+    echo "使用指定设备：$DEVICE"
 fi
 
 # 获取分区设备名
