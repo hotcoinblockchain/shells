@@ -23,7 +23,7 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/instal
 
 ## ulimit settings for system
 ``` shell
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/ulimit_settings | bash -s
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/ulimit_settings.sh | bash -s
 ```
 
 ## auto parted /dev/vdb
