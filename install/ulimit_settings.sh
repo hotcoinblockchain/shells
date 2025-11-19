@@ -31,6 +31,7 @@ EOF
 sudo sysctl -p /etc/sysctl.d/99-blockchain.conf
 
 # 5.查看结果
+echo "######## show ulimit settings ########"
 ulimit -n
 cat /etc/sysctl.d/99-blockchain.conf
 cat /etc/security/limits.d/99-blockchain.conf
