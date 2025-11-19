@@ -20,6 +20,12 @@ apt install nginx -y
 ``` shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/vim_set.sh | bash -s
 ```
+
+## ulimit settings for system
+``` shell
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/ulimit_settings | bash -s
+```
+
 ## auto parted /dev/vdb
 ``` shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/auto_parted.sh | bash -s 
