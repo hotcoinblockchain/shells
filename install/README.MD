@@ -26,6 +26,11 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/instal
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/ulimit_settings.sh | bash -s
 ```
 
+## mount dev by uuid
+``` shell
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/mount-by-uuid.sh | bash -s /dev/vdb1 /coins
+
+```
 ## auto parted /dev/vdb
 ``` shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/auto_parted.sh | bash -s 
