@@ -80,3 +80,9 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/instal
 ``` shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | bash -s 
 ```
+
+## sshd
+``` shell
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/harden_sshd.sh | bash -s
+
+```
