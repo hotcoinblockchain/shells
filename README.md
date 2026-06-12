@@ -20,6 +20,7 @@ Most scripts are designed for Ubuntu servers, with a few scripts also detecting 
 │   ├── init_tinyproxy_cron.sh       # Add tinyproxy health-check cron job
 │   ├── mount-by-uuid.sh             # Persistently mount a block device by UUID
 │   ├── nodejs.sh                    # Install Node.js through NodeSource
+│   ├── pyenv.sh                     # Install pyenv and pyenv-virtualenv
 │   ├── rust-cargo.sh                # Install Rust through rustup
 │   ├── tinyproxy.sh                 # Install and configure tinyproxy
 │   ├── ubuntu-basic-dependcy.sh     # Install common Ubuntu build dependencies
@@ -99,6 +100,10 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/instal
 
 # Node.js
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/nodejs.sh | bash -s
+
+# pyenv
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/pyenv.sh | bash -s
+source ~/.bashrc
 
 # Docker
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | bash -s
