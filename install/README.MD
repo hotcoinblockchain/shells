@@ -83,6 +83,15 @@ curl https://sh.rustup.rs -sSf | sh
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/nodejs.sh | bash -s 
 ```
 
+## pyenv
+``` shell
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/pyenv.sh | bash -s
+source ~/.bashrc
+
+# usage in crontab
+# 0 8 * * * /root/.pyenv/bin/pyenvs 3.10.12 /root/apps/autosign/aliyun-auto-signin/app.py
+```
+
 ## docker
 ``` shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | bash -s 
