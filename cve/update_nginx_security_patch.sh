@@ -180,7 +180,7 @@ update_debian_nginx() {
 
     log "upgrading nginx packages from configured apt repositories"
     # shellcheck disable=SC2086
-    $SUDO DEBIAN_FRONTEND=noninteractive apt-get install --only-upgrade -y $packages
+    $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install --only-upgrade -y $packages
 }
 
 rhel_package_manager() {
