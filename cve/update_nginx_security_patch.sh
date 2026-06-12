@@ -70,6 +70,14 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+run_with_env() {
+    if [ -n "$SUDO" ]; then
+        $SUDO env "$@"
+    else
+        env "$@"
+    fi
+}
+
 detect_os() {
     [ -r /etc/os-release ] || die "/etc/os-release not found; unsupported system"
     # shellcheck disable=SC1091
@@ -180,7 +188,7 @@ update_debian_nginx() {
 
     log "upgrading nginx packages from configured apt repositories"
     # shellcheck disable=SC2086
-    $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install --only-upgrade -y $packages
+    run_with_env DEBIAN_FRONTEND=noninteractive apt-get install --only-upgrade -y $packages
 }
 
 rhel_package_manager() {
