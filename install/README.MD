@@ -35,7 +35,7 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/instal
 ``` shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/auto_parted.sh | bash -s 
 
-``` shell
+``` 
 
 
 ## ubuntu basic dependcy
@@ -62,7 +62,14 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/instal
 
 ## GOLANG
 ``` shell
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/go.sh | bash -s 1.23.2 && source /etc/profile
+# install latest stable Go
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/go.sh | bash -s && source /etc/profile
+
+# install latest patch release for Go 1.24
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/go.sh | bash -s 1.24 && source /etc/profile
+
+# install exact Go version
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/go.sh | bash -s 1.24.3 && source /etc/profile
 
 ```
 
