@@ -94,7 +94,18 @@ source ~/.bashrc
 
 ## docker
 ``` shell
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | bash -s 
+# 默认仅显示 usage
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | bash
+
+# 安装、自动配置并启动
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | sudo bash -s -- install
+
+# 一键安装、配置、迁移数据到 /data/docker 并启动
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | sudo bash -s -- setup /data/docker
+
+# 关闭或启动 Docker
+sudo ./docker.sh stop
+sudo ./docker.sh start
 ```
 
 ## sshd
