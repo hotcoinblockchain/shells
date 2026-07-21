@@ -29,6 +29,8 @@ Most scripts are designed for Ubuntu servers, with a few scripts also detecting 
 ├── update/
 │   ├── nginx_add_proxy_config.sh    # Add nginx reverse proxy config
 │   └── upgrade_apt_package.sh       # Upgrade an installed apt package
+├── devops/
+│   └── cleanup-system-logs.sh       # Rotate and clean system logs by age/size
 └── blockchains/
     └── filecoin/
         └── lotus_export_peers.py    # Export lotus peer connect commands
@@ -133,6 +135,28 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/update
 
 # Install or update nginx reverse proxy config
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/update/nginx_add_proxy_config.sh | bash -s https://wallet.cypress.klaytn.net:8651 10082 klay
+```
+
+## DevOps Scripts
+
+### System Log Cleanup
+
+Clean and rotate system logs. The defaults retain logs for up to 30 days and limit `/var/log` to 5GB:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/cleanup-system-logs.sh | sudo bash
+```
+
+Specify the retention period and maximum size:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/cleanup-system-logs.sh | sudo bash -s -- --days 7 --max-size 2G
+```
+
+Preview the cleanup without deleting anything:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/cleanup-system-logs.sh | sudo bash -s -- --dry-run
 ```
 
 ## Blockchain Scripts
