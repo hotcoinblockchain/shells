@@ -13,6 +13,7 @@ FSTAB_CHANGED=false
 MOUNTED_BY_SCRIPT=false
 ROLLBACK_FILE=""
 TEMP_FILE=""
+CREATED_MOUNT_DIRS=()
 
 log() {
     printf '[mount-by-uuid.sh] %s\n' "$*"
@@ -73,6 +74,7 @@ check_arguments() {
     [[ ${MOUNT_POINT} == /* ]] || die "挂载点必须是绝对路径：${MOUNT_POINT}"
     [[ ${MOUNT_POINT} != / ]] || die "拒绝把设备挂载到根目录 /"
     [[ ${MOUNT_POINT} != *[[:space:]]* ]] || die "挂载点暂不支持空白字符"
+    [[ ! -L ${MOUNT_POINT} ]] || die "挂载点不能是符号链接：${MOUNT_POINT}"
     [[ -f ${FSTAB} ]] || die "fstab 文件不存在：${FSTAB}"
     [[ ! -L ${FSTAB} ]] || die "为保证原子替换，拒绝处理符号链接 fstab：${FSTAB}"
 }
@@ -81,9 +83,30 @@ check_commands() {
     local command_name
 
     for command_name in blkid findmnt lsblk mount umount mountpoint awk cmp mktemp flock stat \
-        find install cp mv chmod chown; do
+        find install cp mv chmod chown rmdir; do
         command -v "${command_name}" >/dev/null 2>&1 || die "缺少命令：${command_name}"
     done
+}
+
+prepare_mount_point() {
+    local path parent
+
+    if [[ -e ${MOUNT_POINT} ]]; then
+        [[ -d ${MOUNT_POINT} ]] || die "挂载点已存在但不是目录：${MOUNT_POINT}"
+        return
+    fi
+
+    path=${MOUNT_POINT}
+    while [[ ! -e ${path} ]]; do
+        CREATED_MOUNT_DIRS+=("${path}")
+        parent=${path%/*}
+        [[ -n ${parent} ]] || parent=/
+        path=${parent}
+    done
+    [[ -d ${path} ]] || die "挂载点的上级路径不是目录：${path}"
+
+    install -d -o root -g root -m 0755 "${MOUNT_POINT}"
+    log "已创建挂载点：${MOUNT_POINT}"
 }
 
 read_device_info() {
@@ -159,7 +182,10 @@ build_fstab() {
 }
 
 validate_fstab() {
-    if ! findmnt --verify --tab-file "${TEMP_FILE}" >/dev/null; then
+    local verify_output
+
+    if ! verify_output=$(findmnt --verify --verbose --tab-file "${TEMP_FILE}" 2>&1); then
+        printf '[mount-by-uuid.sh] findmnt 校验详情：\n%s\n' "${verify_output}" >&2
         die "生成的 fstab 未通过 findmnt 校验，未修改系统配置"
     fi
 }
@@ -191,6 +217,14 @@ rollback() {
         ROLLBACK_FILE=""
         FSTAB_CHANGED=false
         log "操作失败，已恢复原 fstab"
+    fi
+    if (( ${#CREATED_MOUNT_DIRS[@]} > 0 )); then
+        local directory
+
+        for directory in "${CREATED_MOUNT_DIRS[@]}"; do
+            rmdir -- "${directory}" 2>/dev/null || true
+        done
+        CREATED_MOUNT_DIRS=()
     fi
 }
 
@@ -229,7 +263,6 @@ mount_and_verify() {
         return
     fi
 
-    install -d -o root -g root -m 0755 "${MOUNT_POINT}"
     log "挂载 ${MOUNT_POINT}..."
     if ! mount "${MOUNT_POINT}"; then
         rollback
@@ -261,6 +294,7 @@ main() {
     check_fstab_conflicts
     check_runtime_conflicts
     build_fstab
+    prepare_mount_point
     validate_fstab
     install_fstab
     mount_and_verify
