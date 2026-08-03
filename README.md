@@ -77,7 +77,7 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/instal
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/auto_parted.sh | bash -s /dev/vdb /coins
 
 # Mount an existing partition by UUID and write /etc/fstab
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/mount-by-uuid.sh | bash -s /dev/vdb1 /coins
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/mount-by-uuid.sh | bash -s -- /dev/vdb1 /coins
 ```
 
 ### Runtime Tools
