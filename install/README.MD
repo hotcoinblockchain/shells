@@ -25,6 +25,7 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/instal
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/pyenv.sh | bash -s
 source ~/.bashrc
 
+# docker
 curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | sudo bash -s -- setup /coins/docker
 ```
 
