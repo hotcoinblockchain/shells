@@ -1,5 +1,7 @@
 # shells
 
+English | [中文](README_CN.md)
+
 Daily-use shell and Python scripts for Linux server initialization, maintenance, proxy setup, and blockchain node operations.
 
 Most scripts are designed for Ubuntu servers, with a few scripts also detecting CentOS. Many scripts modify system files or install packages, so review the script before running it on a production machine.
