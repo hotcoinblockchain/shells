@@ -42,14 +42,14 @@ usage() {
 导出或导入 firewalld 永久配置。
 
 用法：
-  export_firewalld_rules.sh export OUTPUT_DIR [--runtime-to-permanent]
-  export_firewalld_rules.sh import BACKUP_FILE
-  export_firewalld_rules.sh help
+  firewalld_rules_manager.sh export OUTPUT_DIR [--runtime-to-permanent]
+  firewalld_rules_manager.sh import BACKUP_FILE
+  firewalld_rules_manager.sh help
 
 示例：
-  sudo ./export_firewalld_rules.sh export /coins/firewalld-backups
-  sudo ./export_firewalld_rules.sh export /coins/firewalld-backups --runtime-to-permanent
-  sudo ./export_firewalld_rules.sh import /coins/firewalld-backups/firewalld-backup-HOST-TIME.tar.gz
+  sudo ./firewalld_rules_manager.sh export /coins/firewalld-backups
+  sudo ./firewalld_rules_manager.sh export /coins/firewalld-backups --runtime-to-permanent
+  sudo ./firewalld_rules_manager.sh import /coins/firewalld-backups/firewalld-backup-HOST-TIME.tar.gz
 
 说明：
   export 默认备份 /etc/firewalld 中的永久配置。

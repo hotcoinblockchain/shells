@@ -10,27 +10,29 @@ Most scripts are designed for Ubuntu servers, with a few scripts also detecting 
 .
 ├── install/
 │   ├── README.MD                    # Install script usage snippets
-│   ├── auto_parted.sh               # Auto partition, format, mount data disk
 │   ├── docker.sh                    # Install Docker and Docker Compose
-│   ├── export_firewalld_rules.sh    # Export current firewalld rules
 │   ├── fail2ban.sh                  # Install and configure fail2ban for sshd
 │   ├── git.sh                       # Install Git from git-core PPA
 │   ├── go.sh                        # Install latest/specified Go version
-│   ├── harden_sshd.sh               # Harden sshd password/root login settings
 │   ├── init_tinyproxy_cron.sh       # Add tinyproxy health-check cron job
-│   ├── mount-by-uuid.sh             # Persistently mount a block device by UUID
 │   ├── nodejs.sh                    # Install Node.js through NodeSource
 │   ├── pyenv.sh                     # Install pyenv and pyenv-virtualenv
 │   ├── rust-cargo.sh                # Install Rust through rustup
 │   ├── tinyproxy.sh                 # Install and configure tinyproxy
-│   ├── ubuntu-basic-dependcy.sh     # Install common Ubuntu build dependencies
-│   ├── ulimit_settings.sh           # Raise fd limits and network sysctl values
-│   └── vim_set.sh                   # Add paste-mode helpers to ~/.vimrc
+│   └── ubuntu-basic-dependcy.sh     # Install common Ubuntu build dependencies
 ├── update/
 │   ├── nginx_add_proxy_config.sh    # Add nginx reverse proxy config
 │   └── upgrade_apt_package.sh       # Upgrade an installed apt package
 ├── devops/
-│   └── cleanup-system-logs.sh       # Rotate and clean system logs by age/size
+│   ├── README.md                    # DevOps script usage and curl examples
+│   ├── auto_parted.sh               # Auto partition, format, mount data disk
+│   ├── cleanup-system-logs.sh       # Rotate and clean system logs by age/size
+│   ├── crontab-backup-restore.sh    # Backup and restore the current user's crontab
+│   ├── firewalld_rules_manager.sh   # Export and import firewalld configuration
+│   ├── harden_sshd.sh               # Harden sshd password/root login settings
+│   ├── mount-by-uuid.sh             # Persistently mount a block device by UUID
+│   ├── ulimit_settings.sh           # Raise fd limits and network sysctl values
+│   └── vim_set.sh                   # Add paste-mode helpers to ~/.vimrc
 └── blockchains/
     └── filecoin/
         └── lotus_export_peers.py    # Export lotus peer connect commands
@@ -41,7 +43,7 @@ Most scripts are designed for Ubuntu servers, with a few scripts also detecting 
 Run scripts directly from GitHub:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/vim_set.sh | bash -s
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/vim_set.sh | bash
 ```
 
 Or clone the repository and run locally:
@@ -49,7 +51,7 @@ Or clone the repository and run locally:
 ```bash
 git clone https://github.com/hotcoinblockchain/shells.git
 cd shells
-bash install/vim_set.sh
+bash devops/vim_set.sh
 ```
 
 ## Default Install
@@ -62,13 +64,13 @@ apt install glances iftop vnstat -y
 apt install bpttop
 
 # vim
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/vim_set.sh | bash -s
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/vim_set.sh | bash
 
 # handlers
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/ulimit_settings.sh | bash -s
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/ulimit_settings.sh | bash
 
 # sshd
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/harden_sshd.sh | bash -s
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/harden_sshd.sh | sudo bash
 
 # clean system logs
 curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/cleanup-system-logs.sh | sudo bash -s -- --days 90 --max-size 2G
@@ -93,23 +95,23 @@ curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/insta
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/ubuntu-basic-dependcy.sh | bash -s
 
 # Raise ulimit/sysctl values for node workloads
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/ulimit_settings.sh | bash -s
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/ulimit_settings.sh | bash
 
 # Harden sshd: disable password login, lock root password, keep public-key login
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/harden_sshd.sh | bash -s
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/harden_sshd.sh | sudo bash
 ```
 
 ### Disk Mounting
 
 ```bash
 # Auto-detect /dev/nvme1n1 or /dev/vdb, partition, format ext4, mount to /coins
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/auto_parted.sh | bash -s
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/auto_parted.sh | sudo bash
 
 # Specify disk and mount point
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/auto_parted.sh | bash -s /dev/vdb /coins
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/auto_parted.sh | sudo bash -s -- /dev/vdb /coins
 
 # Mount an existing partition by UUID and write /etc/fstab
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/mount-by-uuid.sh | bash -s -- /dev/vdb1 /coins
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/mount-by-uuid.sh | sudo bash -s -- /dev/vdb1 /coins
 ```
 
 ### Runtime Tools
@@ -156,14 +158,14 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/instal
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/fail2ban.sh | bash -s
 
 # Download and review the script first
-curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/export_firewalld_rules.sh \
-  -o /tmp/export_firewalld_rules.sh
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/firewalld_rules_manager.sh \
+  -o /tmp/firewalld_rules_manager.sh
 
 # Export all permanent firewalld configuration to a backup directory
-sudo bash /tmp/export_firewalld_rules.sh export /coins/firewalld-backups
+sudo bash /tmp/firewalld_rules_manager.sh export /coins/firewalld-backups
 
 # Import after reinstalling the system (replace BACKUP_FILE with the exported archive)
-sudo bash /tmp/export_firewalld_rules.sh import /coins/firewalld-backups/BACKUP_FILE.tar.gz
+sudo bash /tmp/firewalld_rules_manager.sh import /coins/firewalld-backups/BACKUP_FILE.tar.gz
 ```
 
 ## Update Scripts
@@ -177,6 +179,28 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/update
 ```
 
 ## DevOps Scripts
+
+### Crontab Backup and Restore
+
+Back up the current user's crontab to `/coins/crontab-USER.backup` by default:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/crontab-backup-restore.sh | bash -s -- backup
+```
+
+Specify another backup directory:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/crontab-backup-restore.sh | bash -s -- backup /data/backups
+```
+
+Restore the current user's crontab from a backup file:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/crontab-backup-restore.sh | bash -s -- restore /coins/crontab-USER.backup
+```
+
+The commands above execute the current `main` branch directly. For production systems, download and inspect the script first. Do not use `sudo` unless you intend to back up or restore root's crontab.
 
 ### System Log Cleanup
 
@@ -213,4 +237,4 @@ python3 blockchains/filecoin/lotus_export_peers.py
 - Scripts that install packages or write to `/etc`, `/usr/local`, `/coins`, crontab, nginx, sshd, or firewalld usually require root privileges.
 - `auto_parted.sh --force` can repartition a disk. Use it only after confirming the target device.
 - `harden_sshd.sh` disables password authentication. Confirm public-key login works before disconnecting from the server.
-- `install/README.MD` keeps shorter copy-paste snippets for install scripts.
+- `install/README.MD` contains software installation snippets; `devops/README.md` documents server operations and configuration scripts.

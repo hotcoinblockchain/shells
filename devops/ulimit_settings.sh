@@ -51,7 +51,7 @@ main() {
     trap 'rm -f -- "${limits_tmp:-}" "${sysctl_tmp:-}"' EXIT
 
     cat > "${limits_tmp}" <<'EOF'
-# Managed by hotcoinblockchain/shells install/ulimit_settings.sh
+# Managed by hotcoinblockchain/shells devops/ulimit_settings.sh
 # <domain>      <type>  <item>         <value>
 *               soft    nofile         1048576
 *               hard    nofile         1048576
@@ -60,7 +60,7 @@ root            hard    nofile         1048576
 EOF
 
     cat > "${sysctl_tmp}" <<'EOF'
-# Managed by hotcoinblockchain/shells install/ulimit_settings.sh
+# Managed by hotcoinblockchain/shells devops/ulimit_settings.sh
 fs.file-max = 2097152
 fs.nr_open = 2097152
 net.core.somaxconn = 65535
