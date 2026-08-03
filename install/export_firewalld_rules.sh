@@ -219,7 +219,7 @@ ensure_firewalld_installed() {
 check_common_commands() {
     local command_name
 
-    for command_name in awk basename chmod chown cmp cp cut date diff dirname find grep \
+    for command_name in awk basename chmod chown cp cut date dirname find grep \
         hostname install mktemp mv python3 realpath rm sha256sum sort stat systemctl tar tr; do
         require_command "${command_name}"
     done
@@ -296,7 +296,8 @@ EOF
     archive_path="${output_dir}/${archive_name}"
     [[ ! -e ${archive_path} ]] || fatal "备份文件已存在：${archive_path}"
     TEMP_ARCHIVE=$(mktemp "${output_dir}/.firewalld-backup.tmp.XXXXXX")
-    tar -czf "${TEMP_ARCHIVE}" -C "${WORK_DIR}" manifest.env SHA256SUMS firewalld
+    COPYFILE_DISABLE=1 tar -czf "${TEMP_ARCHIVE}" -C "${WORK_DIR}" \
+        manifest.env SHA256SUMS firewalld
     chmod 0600 "${TEMP_ARCHIVE}"
     mv -f -- "${TEMP_ARCHIVE}" "${archive_path}"
     TEMP_ARCHIVE=""
@@ -423,12 +424,36 @@ record_service_state() {
 
 configs_are_equal() {
     [[ -d ${FIREWALLD_CONFIG_DIR} && ! -L ${FIREWALLD_CONFIG_DIR} ]] || return 1
-    diff -qr "${FIREWALLD_CONFIG_DIR}" "${WORK_DIR}/extract/firewalld" >/dev/null 2>&1 || \
-        return 1
-    diff -q \
-        <(cd "${FIREWALLD_CONFIG_DIR}" && find . -printf '%P|%y|%m|%u|%g\n' | LC_ALL=C sort) \
-        <(cd "${WORK_DIR}/extract/firewalld" && find . -printf '%P|%y|%m|%u|%g\n' | LC_ALL=C sort) \
-        >/dev/null 2>&1
+    python3 - "${FIREWALLD_CONFIG_DIR}" "${WORK_DIR}/extract/firewalld" <<'PY'
+import filecmp
+import os
+from pathlib import Path
+import stat
+import sys
+
+left, right = map(Path, sys.argv[1:])
+
+def inventory(root):
+    result = {}
+    for current, directories, files in os.walk(root, followlinks=False):
+        for name in directories + files:
+            path = Path(current) / name
+            relative = path.relative_to(root).as_posix()
+            info = path.lstat()
+            kind = "dir" if stat.S_ISDIR(info.st_mode) else "file" if stat.S_ISREG(info.st_mode) else "other"
+            result[relative] = (kind, stat.S_IMODE(info.st_mode), info.st_uid, info.st_gid)
+    return result
+
+left_items = inventory(left)
+right_items = inventory(right)
+if left_items != right_items:
+    raise SystemExit(1)
+for relative, metadata in left_items.items():
+    if metadata[0] == "file" and not filecmp.cmp(left / relative, right / relative, shallow=False):
+        raise SystemExit(1)
+    if metadata[0] == "other":
+        raise SystemExit(1)
+PY
 }
 
 create_durable_preimport_backup() {
@@ -440,7 +465,7 @@ create_durable_preimport_backup() {
     install -d -o root -g root -m 0700 "${backup_dir}"
     backup_file="${backup_dir}/firewalld-before-import-$(date -u '+%Y%m%dT%H%M%SZ').$$.tar.gz"
     temp_backup=$(mktemp "${backup_dir}/.firewalld-before-import.tmp.XXXXXX")
-    if ! tar -czf "${temp_backup}" -C "$(dirname "${FIREWALLD_CONFIG_DIR}")" \
+    if ! COPYFILE_DISABLE=1 tar -czf "${temp_backup}" -C "$(dirname "${FIREWALLD_CONFIG_DIR}")" \
         "$(basename "${FIREWALLD_CONFIG_DIR}")"; then
         rm -f -- "${temp_backup}"
         fatal "无法备份当前 firewalld 配置"
@@ -510,6 +535,7 @@ import_config() {
     if configs_are_equal; then
         log INFO "当前 firewalld 配置与备份一致，跳过配置替换"
     else
+        log WARN "即将替换完整 firewalld 配置；请确认备份允许当前 SSH/管理端口"
         stage_and_switch_config
     fi
 
