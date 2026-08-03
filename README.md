@@ -52,6 +52,37 @@ cd shells
 bash install/vim_set.sh
 ```
 
+## Default Install
+
+```bash
+# install 
+apt update
+apt install screen supervisor firewalld -y
+apt install glances iftop vnstat -y
+apt install bpttop
+
+# vim
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/vim_set.sh | bash -s
+
+# handlers
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/ulimit_settings.sh | bash -s
+
+# sshd
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/harden_sshd.sh | bash -s
+
+# fail2ban
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/fail2ban.sh | bash -s
+
+# pyenv
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/pyenv.sh | bash -s
+source ~/.bashrc
+
+# docker
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | sudo bash -s -- setup /coins/docker
+
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/cleanup-system-logs.sh | sudo bash -s -- --days 90 --max-size 2G
+```
+
 ## Common Install Scripts
 
 ### System Basics
@@ -150,7 +181,7 @@ curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devop
 Specify the retention period and maximum size:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/cleanup-system-logs.sh | sudo bash -s -- --days 7 --max-size 2G
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/cleanup-system-logs.sh | sudo bash -s -- --days 90 --max-size 2G
 ```
 
 Preview the cleanup without deleting anything:
