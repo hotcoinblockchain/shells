@@ -2,8 +2,9 @@
 
 set -Eeuo pipefail
 
-readonly DEFAULT_DOCKER_ROOT="/var/lib/docker"
-readonly DOCKER_CONFIG_FILE="/etc/docker/daemon.json"
+readonly DEFAULT_DOCKER_ROOT="${DEFAULT_DOCKER_ROOT:-/var/lib/docker}"
+readonly DOCKER_CONFIG_FILE="${DOCKER_CONFIG_FILE:-/etc/docker/daemon.json}"
+CONFIG_CHANGED=false
 
 log() {
     printf '[docker.sh] %s\n' "$*"
@@ -69,10 +70,24 @@ validate_data_dir() {
 install_docker() {
     local package
     local -a conflicting_packages=()
+    local -a required_packages=(
+        docker-ce
+        docker-ce-cli
+        containerd.io
+        docker-buildx-plugin
+        docker-compose-plugin
+    )
+    local installation_complete=true
 
     require_supported_os
 
-    if command -v docker >/dev/null 2>&1; then
+    for package in "${required_packages[@]}"; do
+        if ! dpkg-query -W -f='${db:Status-Abbrev}' "${package}" 2>/dev/null | grep -q '^ii'; then
+            installation_complete=false
+            break
+        fi
+    done
+    if [[ ${installation_complete} == true ]] && command -v docker >/dev/null 2>&1; then
         log "Docker 已安装：$(docker --version)"
         return
     fi
@@ -106,8 +121,7 @@ install_docker() {
         "${arch}" "${ID}" "${codename}" > /etc/apt/sources.list.d/docker.list
 
     apt-get update
-    apt-get install -y docker-ce docker-ce-cli containerd.io \
-        docker-buildx-plugin docker-compose-plugin
+    apt-get install -y "${required_packages[@]}"
     log "Docker 安装完成：$(docker --version)"
 }
 
@@ -116,8 +130,8 @@ write_daemon_config() {
     local tmp_file
 
     command -v python3 >/dev/null 2>&1 || die "写入配置需要 python3"
-    install -d -m 0755 /etc/docker
-    tmp_file=$(mktemp)
+    install -d -m 0755 "$(dirname "${DOCKER_CONFIG_FILE}")"
+    tmp_file=$(mktemp "${DOCKER_CONFIG_FILE}.tmp.XXXXXX")
 
     python3 - "${DOCKER_CONFIG_FILE}" "${data_root}" > "${tmp_file}" <<'PY'
 import json
@@ -148,17 +162,24 @@ if data_root:
 print(json.dumps(config, ensure_ascii=False, indent=2, sort_keys=True))
 PY
 
+    chmod 0644 "${tmp_file}"
     if command -v dockerd >/dev/null 2>&1 && \
         ! dockerd --validate --config-file="${tmp_file}" >/dev/null; then
         rm -f "${tmp_file}"
         die "生成的 Docker 配置校验失败，未修改 ${DOCKER_CONFIG_FILE}"
     fi
+    if [[ -f ${DOCKER_CONFIG_FILE} ]] && cmp -s "${DOCKER_CONFIG_FILE}" "${tmp_file}"; then
+        rm -f "${tmp_file}"
+        CONFIG_CHANGED=false
+        log "${DOCKER_CONFIG_FILE} 已符合要求，无需修改"
+        return
+    fi
     if [[ -f ${DOCKER_CONFIG_FILE} ]]; then
         cp -a "${DOCKER_CONFIG_FILE}" "${DOCKER_CONFIG_FILE}.bak.$(date +%Y%m%d%H%M%S)"
     fi
-    install -m 0644 "${tmp_file}" "${DOCKER_CONFIG_FILE}"
-    rm -f "${tmp_file}"
-    log "已更新 ${DOCKER_CONFIG_FILE}"
+    mv -f "${tmp_file}" "${DOCKER_CONFIG_FILE}"
+    CONFIG_CHANGED=true
+    log "已原子更新 ${DOCKER_CONFIG_FILE}"
 }
 
 stop_docker() {
@@ -202,6 +223,14 @@ restart_docker() {
     systemctl restart containerd.service docker.service || return 1
     docker info >/dev/null || return 1
     log "Docker 配置已生效，数据目录：$(docker info --format '{{.DockerRootDir}}')"
+}
+
+apply_or_start_docker() {
+    if [[ ${CONFIG_CHANGED} == true ]] && systemctl is-active --quiet docker.service; then
+        restart_docker
+    else
+        start_docker
+    fi
 }
 
 current_docker_root() {
@@ -248,7 +277,7 @@ migrate_data() {
     if [[ ${source_dir} == "${target_dir}" ]]; then
         log "Docker 已使用目标目录，无需迁移"
         write_daemon_config "${target_dir}"
-        start_docker
+        apply_or_start_docker
         return
     fi
     [[ -d ${source_dir} ]] || die "源数据目录不存在：${source_dir}"
@@ -312,7 +341,7 @@ main() {
                 migrate_data "$2"
             else
                 write_daemon_config
-                restart_docker
+                apply_or_start_docker
             fi
             ;;
         stop)
@@ -330,9 +359,7 @@ main() {
             [[ $# -eq 1 ]] || die "configure 不接受额外参数；请使用 migrate DATA_DIR"
             require_root "$@"
             write_daemon_config
-            if systemctl is-active --quiet docker.service; then
-                restart_docker
-            fi
+            apply_or_start_docker
             ;;
         migrate)
             [[ $# -eq 2 ]] || die "用法：docker.sh migrate DATA_DIR"

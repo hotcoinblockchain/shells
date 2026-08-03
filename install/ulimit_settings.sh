@@ -1,8 +1,57 @@
-# 1. 临时提升当前会话（立即生效，重启失效）
-ulimit -n 1048576
+#!/usr/bin/env bash
 
-# 2. 永久提升当前用户（推荐所有节点都这么做）
-sudo tee /etc/security/limits.d/99-blockchain.conf <<EOF
+set -Eeuo pipefail
+
+LIMITS_FILE="${LIMITS_FILE:-/etc/security/limits.d/99-blockchain.conf}"
+SYSCTL_FILE="${SYSCTL_FILE:-/etc/sysctl.d/99-blockchain.conf}"
+
+log() {
+    printf '[ulimit_settings.sh] %s\n' "$*"
+}
+
+die() {
+    printf '[ulimit_settings.sh] ERROR: %s\n' "$*" >&2
+    exit 1
+}
+
+run_as_root() {
+    if [[ ${EUID} -eq 0 ]]; then
+        "$@"
+    else
+        command -v sudo >/dev/null 2>&1 || die "缺少 sudo，请使用 root 执行"
+        sudo "$@"
+    fi
+}
+
+atomic_install() {
+    local source_file=$1
+    local target_file=$2
+    local target_tmp
+
+    run_as_root install -d -m 0755 "$(dirname "${target_file}")"
+    if run_as_root test -f "${target_file}" && run_as_root cmp -s "${source_file}" "${target_file}"; then
+        log "配置未变化，跳过：${target_file}"
+        return
+    fi
+
+    target_tmp=$(run_as_root mktemp "${target_file}.tmp.XXXXXX")
+    if ! run_as_root install -m 0644 "${source_file}" "${target_tmp}"; then
+        run_as_root rm -f -- "${target_tmp}"
+        die "无法生成临时配置：${target_file}"
+    fi
+    run_as_root mv -f -- "${target_tmp}" "${target_file}"
+    log "配置已更新：${target_file}"
+}
+
+main() {
+    local limits_tmp sysctl_tmp
+
+    limits_tmp=$(mktemp)
+    sysctl_tmp=$(mktemp)
+    trap 'rm -f -- "${limits_tmp:-}" "${sysctl_tmp:-}"' EXIT
+
+    cat > "${limits_tmp}" <<'EOF'
+# Managed by hotcoinblockchain/shells install/ulimit_settings.sh
 # <domain>      <type>  <item>         <value>
 *               soft    nofile         1048576
 *               hard    nofile         1048576
@@ -10,15 +59,10 @@ root            soft    nofile         1048576
 root            hard    nofile         1048576
 EOF
 
-# 3. 系统级全局最大值（必须改，不然上面也无效）
-sudo tee /etc/sysctl.d/99-blockchain.conf <<EOF
-# 最大文件描述符数量（系统全局）
+    cat > "${sysctl_tmp}" <<'EOF'
+# Managed by hotcoinblockchain/shells install/ulimit_settings.sh
 fs.file-max = 2097152
-
-# 每个进程最大能申请的 fd 数量
 fs.nr_open = 2097152
-
-# 下面这些顺手一起调了，防其他连接问题
 net.core.somaxconn = 65535
 net.ipv4.tcp_max_syn_backlog = 16384
 net.core.netdev_max_backlog = 16384
@@ -27,11 +71,19 @@ net.ipv4.tcp_tw_reuse = 1
 net.ipv4.tcp_fin_timeout = 15
 EOF
 
-# 4. 立即生效
-sudo sysctl -p /etc/sysctl.d/99-blockchain.conf
+    atomic_install "${limits_tmp}" "${LIMITS_FILE}"
+    atomic_install "${sysctl_tmp}" "${SYSCTL_FILE}"
 
-# 5.查看结果
-echo "######## show ulimit settings ########"
-ulimit -n
-cat /etc/sysctl.d/99-blockchain.conf
-cat /etc/security/limits.d/99-blockchain.conf
+    log "应用 sysctl 配置..."
+    run_as_root sysctl -e -p "${SYSCTL_FILE}"
+
+    if ! ulimit -n 1048576 2>/dev/null; then
+        log "当前 shell 无法临时提升到 1048576；永久配置将在重新登录后生效"
+    fi
+
+    log "当前 shell nofile：$(ulimit -n)"
+    run_as_root cat "${SYSCTL_FILE}"
+    run_as_root cat "${LIMITS_FILE}"
+}
+
+main "$@"

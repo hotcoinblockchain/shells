@@ -12,6 +12,7 @@ LOCK_ROOT_PASSWORD=0
 DRY_RUN=0
 NO_RELOAD=0
 RESET_MODE=0
+CONFIG_CHANGED=0
 
 SSH_SERVICE=""
 BACKUP_FILE=""
@@ -138,7 +139,8 @@ build_config() {
         BEGIN {
             in_managed = 0
             in_match = 0
-            inserted = 0
+            body_started = 0
+            print_managed_block()
         }
 
         function is_managed_key(line) {
@@ -162,8 +164,6 @@ build_config() {
             print "LoginGraceTime 30"
             print end
             print ""
-
-            inserted = 1
         }
 
         # 删除旧的托管配置块。
@@ -182,11 +182,6 @@ build_config() {
         }
 
         {
-            # 在第一个 Match 块前插入统一配置。
-            if (!inserted && $0 ~ /^[[:space:]]*Match[[:space:]]+/) {
-                print_managed_block()
-            }
-
             if (!in_match && $0 ~ /^[[:space:]]*Match[[:space:]]+/) {
                 in_match = 1
             }
@@ -204,14 +199,12 @@ build_config() {
                 }
             }
 
-            print
-        }
-
-        END {
-            if (!inserted) {
-                print ""
-                print_managed_block()
+            # 托管块固定置顶，并丢弃旧块移除后遗留的文件开头空行。
+            if (!body_started && $0 ~ /^[[:space:]]*$/) {
+                next
             }
+            body_started = 1
+            print
         }
     ' "$source_file" > "$output_file"
 }
@@ -258,13 +251,17 @@ lock_root_password() {
 }
 
 rollback() {
+    local rollback_temp
+
     if [[ -z "$BACKUP_FILE" || ! -f "$BACKUP_FILE" ]]; then
         return 0
     fi
 
     log "SSH 服务操作失败，正在恢复配置: $BACKUP_FILE"
 
-    cp -a "$BACKUP_FILE" "$SSHD_CONFIG"
+    rollback_temp="$(mktemp "${SSHD_CONFIG}.rollback.XXXXXX")"
+    cp -a "$BACKUP_FILE" "$rollback_temp"
+    mv -f "$rollback_temp" "$SSHD_CONFIG"
 
     if ! validate_config "$SSHD_CONFIG"; then
         die "回滚后的 SSH 配置校验失败，请立即人工检查"
@@ -278,20 +275,9 @@ rollback() {
 }
 
 install_config() {
-    local owner
-    local group
-    local mode
-
-    owner="$(stat -c '%u' "$SSHD_CONFIG")"
-    group="$(stat -c '%g' "$SSHD_CONFIG")"
-    mode="$(stat -c '%a' "$SSHD_CONFIG")"
-
-    install \
-        -o "$owner" \
-        -g "$group" \
-        -m "$mode" \
-        "$TEMP_FILE" \
-        "$SSHD_CONFIG"
+    mv -f "$TEMP_FILE" "$SSHD_CONFIG"
+    TEMP_FILE=""
+    CONFIG_CHANGED=1
 }
 
 backup_current_config() {
@@ -307,6 +293,8 @@ backup_current_config() {
 }
 
 restore_default_config() {
+    local reset_temp
+
     detect_reset_source
 
     log "检测到默认 SSH 配置来源: $RESET_SOURCE"
@@ -326,8 +314,12 @@ restore_default_config() {
         return 0
     fi
 
+    reset_temp="$(mktemp "${SSHD_CONFIG}.reset.XXXXXX")"
+    cp -a "$RESET_SOURCE" "$reset_temp"
+    validate_config "$reset_temp"
     backup_current_config
-    cp -a "$RESET_SOURCE" "$SSHD_CONFIG"
+    mv -f "$reset_temp" "$SSHD_CONFIG"
+    CONFIG_CHANGED=1
 
     log "默认配置已恢复到: $SSHD_CONFIG"
 }
@@ -407,7 +399,7 @@ main() {
         validate_config "$SSHD_CONFIG"
     fi
 
-    if ((!NO_RELOAD && !DRY_RUN)); then
+    if ((!NO_RELOAD && !DRY_RUN && CONFIG_CHANGED)); then
         log "重新加载 SSH 服务"
 
         if ! systemctl reload "$SSH_SERVICE"; then

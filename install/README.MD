@@ -1,13 +1,39 @@
 # Usage
 
-## software
-``` shell
+## Default Install 
+
+```bash
+# install 
+apt update
 apt install screen supervisor firewalld -y
+apt install glances iftop vnstat -y
+apt install bpttop
 
-apt install screen glances iftop vnstat -y
+# vim
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/vim_set.sh | bash -s
 
+# handlers
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/ulimit_settings.sh | bash -s
+
+# sshd
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/harden_sshd.sh | bash -s
+
+# fail2ban
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/fail2ban.sh | bash -s
+
+# pyenv
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/pyenv.sh | bash -s
+source ~/.bashrc
+
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | sudo bash -s -- setup /coins/docker
+```
+
+## software
+
+```shell
+apt install screen supervisor firewalld -y
+apt install glances iftop vnstat -y
 apt install bpytop -y
-
 
 # sudo vnstat -u -i eth0  # 替换 eth0 为你的网络接口
 systemctl start vnstat
@@ -16,52 +42,58 @@ systemctl enable vnstat
 
 apt install nginx -y
 ```
+
 ## vim setup
-``` shell
+
+```shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/vim_set.sh | bash -s
 ```
 
 ## ulimit settings for system
-``` shell
+
+```shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/ulimit_settings.sh | bash -s
 ```
 
 ## mount dev by uuid
-``` shell
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/mount-by-uuid.sh | bash -s /dev/vdb1 /coins
 
+```shell
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/mount-by-uuid.sh | bash -s --  /dev/vdb1 /coins
 ```
+
 ## auto parted /dev/vdb
-``` shell
+
+```shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/auto_parted.sh | bash -s 
-
-``` 
-
+```
 
 ## ubuntu basic dependcy
-``` shell
+
+```shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/ubuntu-basic-dependcy.sh | bash -s 
 ```
 
 ## tinyproxy
-``` shell
+
+```shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/tinyproxy.sh | bash -s 
 ```
 
 ## fail2ban
-``` shell
+
+```shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/fail2ban.sh | bash -s
 ```
 
-
 ## git
-``` shell
+
+```shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/git.sh | bash -s 
 ```
 
-
 ## GOLANG
-``` shell
+
+```shell
 # install latest stable Go
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/go.sh | bash -s && source /etc/profile
 
@@ -70,21 +102,23 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/instal
 
 # install exact Go version
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/go.sh | bash -s 1.24.3 && source /etc/profile
-
 ```
 
 ## Rust&Cargo
-``` shell
+
+```shell
 curl https://sh.rustup.rs -sSf | sh
 ```
 
 ## nodejs
-``` shell
+
+```shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/nodejs.sh | bash -s 
 ```
 
 ## pyenv
-``` shell
+
+```shell
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/pyenv.sh | bash -s
 source ~/.bashrc
 
@@ -93,7 +127,8 @@ source ~/.bashrc
 ```
 
 ## docker
-``` shell
+
+```shell
 # 默认仅显示 usage
 curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | bash
 
@@ -109,7 +144,7 @@ sudo ./docker.sh start
 ```
 
 ## sshd
-``` shell
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/harden_sshd.sh | bash -s
 
+```shell
+curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/harden_sshd.sh | bash -s
 ```
