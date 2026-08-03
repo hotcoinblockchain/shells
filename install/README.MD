@@ -1,5 +1,7 @@
 # Usage
 
+本目录只保留软件安装脚本。磁盘、挂载、SSH、firewalld、系统限制和 Vim 配置脚本已移至 [`devops/`](../devops/README.md)。
+
 ## software
 
 ```shell
@@ -13,30 +15,6 @@ systemctl enable vnstat
 
 
 apt install nginx -y
-```
-
-## vim setup
-
-```shell
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/vim_set.sh | bash -s
-```
-
-## ulimit settings for system
-
-```shell
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/ulimit_settings.sh | bash -s
-```
-
-## mount dev by uuid
-
-```shell
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/mount-by-uuid.sh | bash -s --  /dev/vdb1 /coins
-```
-
-## auto parted /dev/vdb
-
-```shell
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/auto_parted.sh | bash -s 
 ```
 
 ## ubuntu basic dependcy
@@ -113,10 +91,4 @@ curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/insta
 # 关闭或启动 Docker
 sudo ./docker.sh stop
 sudo ./docker.sh start
-```
-
-## sshd
-
-```shell
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/harden_sshd.sh | bash -s
 ```

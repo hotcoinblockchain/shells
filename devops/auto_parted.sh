@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-### curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/auto_parted.sh | bash -s 
+### curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/auto_parted.sh | sudo bash -s
 
 
 # 检查是否具有 root 权限

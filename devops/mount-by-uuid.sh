@@ -31,7 +31,7 @@ usage() {
 
 示例：
   sudo ./mount-by-uuid.sh /dev/vdb1 /coins
-  curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/mount-by-uuid.sh \
+  curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/mount-by-uuid.sh \
     | sudo bash -s -- /dev/vdb1 /coins
 
 脚本不会格式化设备。设备必须已经包含可识别的文件系统和 UUID。
