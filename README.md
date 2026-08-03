@@ -80,6 +80,7 @@ source ~/.bashrc
 # docker
 curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | sudo bash -s -- setup /coins/docker
 
+# clean system logs
 curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/cleanup-system-logs.sh | sudo bash -s -- --days 90 --max-size 2G
 ```
 
