@@ -70,6 +70,9 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/instal
 # sshd
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/harden_sshd.sh | bash -s
 
+# clean system logs
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/cleanup-system-logs.sh | sudo bash -s -- --days 90 --max-size 2G
+
 # fail2ban
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/fail2ban.sh | bash -s
 
@@ -79,9 +82,6 @@ source ~/.bashrc
 
 # docker
 curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | sudo bash -s -- setup /coins/docker
-
-# clean system logs
-curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/cleanup-system-logs.sh | sudo bash -s -- --days 90 --max-size 2G
 ```
 
 ## Common Install Scripts
