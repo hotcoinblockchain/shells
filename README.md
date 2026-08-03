@@ -155,8 +155,15 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/instal
 # fail2ban
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/fail2ban.sh | bash -s
 
-# Export firewalld rules to /coins/firewalld.rules.sh
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/export_firewalld_rules.sh | bash -s
+# Download and review the script first
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/export_firewalld_rules.sh \
+  -o /tmp/export_firewalld_rules.sh
+
+# Export all permanent firewalld configuration to a backup directory
+sudo bash /tmp/export_firewalld_rules.sh export /coins/firewalld-backups
+
+# Import after reinstalling the system (replace BACKUP_FILE with the exported archive)
+sudo bash /tmp/export_firewalld_rules.sh import /coins/firewalld-backups/BACKUP_FILE.tar.gz
 ```
 
 ## Update Scripts
