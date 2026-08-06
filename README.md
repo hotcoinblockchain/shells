@@ -63,7 +63,7 @@ bash devops/vim_set.sh
 apt update
 apt install screen supervisor firewalld -y
 apt install glances iftop vnstat -y
-apt install bpttop
+apt install bpytop
 
 # vim
 curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/vim_set.sh | bash
