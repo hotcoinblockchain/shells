@@ -30,6 +30,7 @@
 │   ├── auto_parted.sh               # 自动分区、格式化并挂载数据盘
 │   ├── cleanup-system-logs.sh       # 按时间和容量轮转、清理系统日志
 │   ├── crontab-backup-restore.sh    # 备份和恢复当前用户的 crontab
+│   ├── fastdir-backup.sh            # 使用 tar/zstd 快速备份并分阶段恢复目录
 │   ├── firewalld_rules_manager.sh   # 导出和导入 firewalld 配置
 │   ├── harden_sshd.sh               # 加固 sshd 密码和 root 登录配置
 │   ├── mount-by-uuid.sh             # 按 UUID 持久挂载块设备
@@ -144,6 +145,9 @@ source ~/.bashrc
 
 # Docker
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | bash -s
+
+# 单独安装最新版 docker-compose 到 /usr/local/bin
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | sudo bash -s -- compose
 ```
 
 ### 代理与安全
@@ -180,6 +184,66 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/update
 ```
 
 ## DevOps 脚本
+
+### 快速目录备份与恢复
+
+主要依赖 `zstd`、`rsync`、GNU `tar`、`flock` 和 `sha256sum`。Ubuntu/Debian 通常只需额外安装以下软件包，然后赋予脚本执行权限：
+
+```bash
+apt update
+apt install -y zstd rsync
+chmod +x devops/fastdir-backup.sh
+```
+
+备份 `/root` 目录中的内容。`--threads 0` 表示让 zstd 自动使用全部 CPU 核心：
+
+```bash
+./devops/fastdir-backup.sh backup \
+  --source /root \
+  --output /backup/root-2026-08-12.tar.zst \
+  --threads 0
+```
+
+校验备份及自动生成的 `.sha256` 文件：
+
+```bash
+./devops/fastdir-backup.sh verify \
+  --archive /backup/root-2026-08-12.tar.zst
+```
+
+恢复到空目录：
+
+```bash
+./devops/fastdir-backup.sh restore \
+  --archive /backup/root-2026-08-12.tar.zst \
+  --dest /restore/root
+```
+
+覆盖或合并到已有的 `/root`，必须显式指定 `--merge`：
+
+```bash
+./devops/fastdir-backup.sh restore \
+  --archive /backup/root-2026-08-12.tar.zst \
+  --dest /root \
+  --merge
+```
+
+偏重备份速度并排除缓存目录：
+
+```bash
+./devops/fastdir-backup.sh backup \
+  --source /root \
+  --output /backup/root.tar.zst \
+  --threads 0 \
+  --level 1 \
+  --exclude '.cache'
+```
+
+其他常用参数包括：`--threads 16` 使用 16 个压缩线程；重复使用 `--exclude` 排除多个模式；`--one-file-system` 不跨挂载点；`--level 1` 到 `--level 19` 调整压缩速度和压缩率；`--staging-dir /data/tmp` 在另一块大硬盘上临时解压。
+
+安全行为：备份的是源目录中的内容，不额外嵌套源目录名；自动生成并强制校验 `.sha256`；恢复前测试 zstd 文件和 tar 路径；默认禁止恢复到非空目录；先解压到 staging，再用 rsync 同步；保留权限、UID/GID、软链接、硬链接、ACL、xattr 和稀疏文件；使用 `flock` 防止并发任务；禁止将 `/` 作为源目录或恢复目标；备份写入临时文件并在完成后原子发布。
+
+该版本使用 tar 顺序读取文件、zstd 多线程压缩，不是多个 worker 同时并行读取不同文件。
 
 ### Crontab 备份与恢复
 

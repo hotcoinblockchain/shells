@@ -85,6 +85,12 @@ curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/insta
 # 安装、自动配置并启动
 curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | sudo bash -s -- install
 
+# 仅安装最新版 docker-compose 到 /usr/local/bin/docker-compose
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | sudo bash -s -- compose
+
+# 仅安装指定版本（VERSION 可带或不带 v）
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | sudo bash -s -- compose 5.1.4
+
 # 一键安装、配置、迁移数据到 /data/docker 并启动
 curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | sudo bash -s -- setup /data/docker
 

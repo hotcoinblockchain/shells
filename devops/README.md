@@ -82,6 +82,72 @@ curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devop
 curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/devops/vim_set.sh | bash
 ```
 
+## Fast Directory Backup
+
+主要依赖 `zstd`、`rsync`、GNU `tar`、`flock` 和 `sha256sum`。Ubuntu/Debian 通常只需额外安装以下软件包，然后赋予脚本执行权限：
+
+```bash
+apt update
+apt install -y zstd rsync
+chmod +x fastdir-backup.sh
+```
+
+备份 `/root` 目录中的内容。`--threads 0` 表示让 zstd 自动使用全部 CPU 核心：
+
+```bash
+./fastdir-backup.sh backup \
+  --source /root \
+  --output /backup/root-2026-08-12.tar.zst \
+  --threads 0
+```
+
+校验备份及自动生成的 `.sha256` 文件：
+
+```bash
+./fastdir-backup.sh verify \
+  --archive /backup/root-2026-08-12.tar.zst
+```
+
+恢复到空目录：
+
+```bash
+./fastdir-backup.sh restore \
+  --archive /backup/root-2026-08-12.tar.zst \
+  --dest /restore/root
+```
+
+覆盖或合并到已有的 `/root`，必须显式指定 `--merge`：
+
+```bash
+./fastdir-backup.sh restore \
+  --archive /backup/root-2026-08-12.tar.zst \
+  --dest /root \
+  --merge
+```
+
+偏重备份速度并排除缓存目录：
+
+```bash
+./fastdir-backup.sh backup \
+  --source /root \
+  --output /backup/root.tar.zst \
+  --threads 0 \
+  --level 1 \
+  --exclude '.cache'
+```
+
+常用参数：
+
+- `--threads 16`：使用 16 个 zstd 压缩线程；`0` 表示自动使用全部 CPU 核心。
+- `--level 1`：压缩速度最快；支持 `1` 到 `19`，数值越高通常压缩率越高。
+- `--exclude '.cache'` 或 `--exclude '*.log'`：排除文件或目录，可重复使用。
+- `--one-file-system`：备份时不跨越其他挂载点。
+- `--staging-dir /data/tmp`：恢复时在另一块大容量磁盘上临时解压。
+
+安全行为：备份的是源目录中的内容，不额外嵌套源目录名；备份完成后生成 `.sha256`，校验和恢复时必须通过 SHA-256、zstd 和 tar 路径检查；默认禁止恢复到非空目录；恢复会先解压到 staging，再通过 rsync 同步；保留权限、UID/GID、软链接、硬链接、ACL、xattr 和稀疏文件；使用 `flock` 避免并发任务；拒绝将 `/` 作为源目录或恢复目标；输出先写入临时文件，成功后再原子移动。
+
+该实现使用 tar 顺序读取文件、zstd 多线程压缩，不是多个 worker 同时并行读取不同文件。
+
 ## Crontab Backup and Restore
 
 将当前用户的 crontab 备份到 `/coins`：
