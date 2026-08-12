@@ -4,7 +4,16 @@ set -Eeuo pipefail
 
 readonly DEFAULT_DOCKER_ROOT="${DEFAULT_DOCKER_ROOT:-/var/lib/docker}"
 readonly DOCKER_CONFIG_FILE="${DOCKER_CONFIG_FILE:-/etc/docker/daemon.json}"
+readonly DOCKER_COMPOSE_BIN="${DOCKER_COMPOSE_BIN:-/usr/local/bin/docker-compose}"
+readonly COMPOSE_RELEASE_BASE="${COMPOSE_RELEASE_BASE:-https://github.com/docker/compose/releases}"
+readonly LOCK_FILE="${LOCK_FILE:-/run/lock/hotcoin-docker-manager.lock}"
 CONFIG_CHANGED=false
+COMPOSE_WORK_DIR=""
+COMPOSE_TARGET_TMP=""
+COMPOSE_ROLLBACK=""
+COMPOSE_HAD_TARGET=false
+COMPOSE_TARGET_REPLACED=false
+COMPOSE_COMMITTED=false
 
 log() {
     printf '[docker.sh] %s\n' "$*"
@@ -21,6 +30,7 @@ Docker 安装、配置和数据迁移工具（仅支持 Debian/Ubuntu）
 
 用法：
   docker.sh install [DATA_DIR]    安装 Docker；可选迁移数据到 DATA_DIR
+  docker.sh compose [VERSION]     单独安装最新版或指定版本的 docker-compose
   docker.sh stop                  停止所有容器及 Docker 服务
   docker.sh start                 启动并设置 Docker 开机自启
   docker.sh configure             写入推荐的日志与 live-restore 配置
@@ -31,6 +41,8 @@ Docker 安装、配置和数据迁移工具（仅支持 Debian/Ubuntu）
 
 示例：
   sudo ./docker.sh install
+  sudo ./docker.sh compose
+  sudo ./docker.sh compose 5.1.4
   sudo ./docker.sh setup /data/docker
   sudo ./docker.sh migrate /mnt/docker-data
   curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh \
@@ -38,12 +50,49 @@ Docker 安装、配置和数据迁移工具（仅支持 Debian/Ubuntu）
 
 说明：
   - 不传参数时只显示本帮助，不执行任何修改。
+  - install/setup 会同时把最新版 docker-compose 安装到 /usr/local/bin。
+  - VERSION 可写成 5.1.4 或 v5.1.4；省略时从 Docker Compose 官方最新发布解析。
   - migrate/setup 要求目标目录为空；迁移成功后不会删除原数据。
 EOF
 }
 
+cleanup_compose_transaction() {
+    local rc=$?
+
+    if (( rc != 0 )) && [[ ${COMPOSE_TARGET_REPLACED} == true && ${COMPOSE_COMMITTED} != true ]]; then
+        log "Compose 安装失败，正在恢复原 ${DOCKER_COMPOSE_BIN}"
+        if [[ ${COMPOSE_HAD_TARGET} == true && \
+              ( -e ${COMPOSE_ROLLBACK} || -L ${COMPOSE_ROLLBACK} ) ]]; then
+            mv -f -- "${COMPOSE_ROLLBACK}" "${DOCKER_COMPOSE_BIN}" || true
+        else
+            rm -f -- "${DOCKER_COMPOSE_BIN}" || true
+        fi
+    fi
+    if [[ -n ${COMPOSE_TARGET_TMP} ]]; then
+        rm -f -- "${COMPOSE_TARGET_TMP}" || true
+    fi
+    if [[ -n ${COMPOSE_WORK_DIR} && -d ${COMPOSE_WORK_DIR} && ! -L ${COMPOSE_WORK_DIR} && \
+          ${COMPOSE_WORK_DIR} == "${TMPDIR:-/tmp}/docker-compose-install."* ]]; then
+        rm -rf -- "${COMPOSE_WORK_DIR}" || true
+    fi
+}
+
+trap cleanup_compose_transaction EXIT
+
 require_root() {
     [[ ${EUID} -eq 0 ]] || die "请使用 root 运行，例如：sudo $0 $*"
+}
+
+acquire_lock() {
+    command -v flock >/dev/null 2>&1 || die "缺少 flock，请安装 util-linux"
+    install -d -o root -g root -m 0755 "$(dirname "${LOCK_FILE}")"
+    exec 9>"${LOCK_FILE}"
+    flock -n 9 || die "已有另一个 Docker 安装或配置进程正在运行"
+}
+
+prepare_mutation() {
+    require_root "$@"
+    acquire_lock
 }
 
 require_supported_os() {
@@ -54,6 +103,123 @@ require_supported_os() {
         ubuntu|debian) ;;
         *) die "当前仅支持 Debian/Ubuntu，检测到：${ID:-unknown}" ;;
     esac
+}
+
+normalize_compose_arch() {
+    case "$(uname -m)" in
+        x86_64|amd64) printf '%s\n' x86_64 ;;
+        aarch64|arm64) printf '%s\n' aarch64 ;;
+        armv7l|armv7) printf '%s\n' armv7 ;;
+        ppc64le|riscv64|s390x) uname -m ;;
+        *) die "Docker Compose 不支持当前架构：$(uname -m)" ;;
+    esac
+}
+
+resolve_compose_version() {
+    local requested=${1:-}
+    local effective_url
+
+    if [[ -n ${requested} ]]; then
+        requested=${requested#v}
+        [[ ${requested} =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]] || \
+            die "Compose VERSION 格式无效：${requested}"
+        printf 'v%s\n' "${requested}"
+        return
+    fi
+
+    effective_url=$(curl -fsSL --retry 3 --retry-delay 2 --connect-timeout 10 \
+        --max-time 60 -o /dev/null -w '%{url_effective}' \
+        "${COMPOSE_RELEASE_BASE}/latest")
+    requested=${effective_url##*/}
+    [[ ${requested} =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]] || \
+        die "无法从官方 latest 地址解析 Compose 版本：${effective_url}"
+    printf '%s\n' "${requested}"
+}
+
+installed_compose_version() {
+    local binary=$1
+    local version
+
+    [[ -x ${binary} && ! -d ${binary} ]] || return 1
+    version=$("${binary}" version --short 2>/dev/null) || return 1
+    version=${version#v}
+    printf '%s\n' "${version%%[[:space:]]*}"
+}
+
+install_docker_compose() {
+    local requested_version=${1:-}
+    local version
+    local plain_version
+    local arch
+    local asset
+    local download_url
+    local checksum_url
+    local expected_hash
+    local actual_hash
+    local current_version=""
+
+    require_supported_os
+    if ! command -v curl >/dev/null 2>&1; then
+        log "安装下载 Docker Compose 所需的 curl 和 CA 证书..."
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update
+        apt-get install -y ca-certificates curl
+    fi
+    command -v sha256sum >/dev/null 2>&1 || die "缺少 sha256sum，请安装 coreutils"
+
+    version=$(resolve_compose_version "${requested_version}")
+    plain_version=${version#v}
+    arch=$(normalize_compose_arch)
+    asset="docker-compose-linux-${arch}"
+    download_url="${COMPOSE_RELEASE_BASE}/download/${version}/${asset}"
+    checksum_url="${download_url}.sha256"
+
+    if current_version=$(installed_compose_version "${DOCKER_COMPOSE_BIN}"); then
+        if [[ ${current_version} == "${plain_version}" ]]; then
+            log "docker-compose 已是目标版本：v${current_version}"
+            COMPOSE_COMMITTED=true
+            return
+        fi
+    fi
+
+    COMPOSE_WORK_DIR=$(mktemp -d "${TMPDIR:-/tmp}/docker-compose-install.XXXXXX")
+    chmod 0700 "${COMPOSE_WORK_DIR}"
+    log "下载 Docker Compose ${version}（linux/${arch}）..."
+    curl -fL --retry 3 --retry-delay 2 --connect-timeout 10 --max-time 300 \
+        "${download_url}" -o "${COMPOSE_WORK_DIR}/${asset}"
+    curl -fsSL --retry 3 --retry-delay 2 --connect-timeout 10 --max-time 60 \
+        "${checksum_url}" -o "${COMPOSE_WORK_DIR}/${asset}.sha256"
+
+    expected_hash=$(awk 'NR == 1 { print $1 }' "${COMPOSE_WORK_DIR}/${asset}.sha256")
+    expected_hash=$(printf '%s' "${expected_hash}" | tr 'A-F' 'a-f')
+    actual_hash=$(sha256sum "${COMPOSE_WORK_DIR}/${asset}" | awk '{ print $1 }')
+    [[ ${expected_hash} =~ ^[0-9a-fA-F]{64}$ ]] || die "官方 SHA-256 文件格式无效"
+    [[ ${actual_hash} == "${expected_hash}" ]] || die "Docker Compose SHA-256 校验失败"
+    chmod 0755 "${COMPOSE_WORK_DIR}/${asset}"
+    [[ $(installed_compose_version "${COMPOSE_WORK_DIR}/${asset}") == "${plain_version}" ]] || \
+        die "下载的 Docker Compose 版本校验失败"
+
+    install -d -o root -g root -m 0755 "$(dirname "${DOCKER_COMPOSE_BIN}")"
+    [[ ! -d ${DOCKER_COMPOSE_BIN} ]] || die "目标路径是目录，拒绝覆盖：${DOCKER_COMPOSE_BIN}"
+    COMPOSE_TARGET_TMP=$(mktemp "$(dirname "${DOCKER_COMPOSE_BIN}")/.docker-compose.tmp.XXXXXX")
+    install -o root -g root -m 0755 "${COMPOSE_WORK_DIR}/${asset}" "${COMPOSE_TARGET_TMP}"
+    [[ $(installed_compose_version "${COMPOSE_TARGET_TMP}") == "${plain_version}" ]] || \
+        die "暂存的 Docker Compose 无法运行"
+
+    if [[ -e ${DOCKER_COMPOSE_BIN} || -L ${DOCKER_COMPOSE_BIN} ]]; then
+        COMPOSE_HAD_TARGET=true
+        COMPOSE_ROLLBACK="${COMPOSE_WORK_DIR}/previous-docker-compose"
+        cp -a -- "${DOCKER_COMPOSE_BIN}" "${COMPOSE_ROLLBACK}"
+    fi
+    COMPOSE_TARGET_REPLACED=true
+    mv -f -- "${COMPOSE_TARGET_TMP}" "${DOCKER_COMPOSE_BIN}"
+    COMPOSE_TARGET_TMP=""
+    [[ $(installed_compose_version "${DOCKER_COMPOSE_BIN}") == "${plain_version}" ]] || \
+        die "Docker Compose 安装后验证失败"
+
+    COMPOSE_COMMITTED=true
+    COMPOSE_TARGET_REPLACED=false
+    log "Docker Compose 已安装：${DOCKER_COMPOSE_BIN}（v${plain_version}）"
 }
 
 validate_data_dir() {
@@ -321,7 +487,8 @@ show_status() {
     systemctl --no-pager --full status docker.service || true
     if docker info >/dev/null 2>&1; then
         printf '\nDocker version: %s\n' "$(docker --version)"
-        printf 'Compose version: %s\n' "$(docker compose version 2>/dev/null || printf 'not installed')"
+        printf 'Compose plugin:  %s\n' "$(docker compose version 2>/dev/null || printf 'not installed')"
+        printf 'Compose binary:  %s\n' "$("${DOCKER_COMPOSE_BIN}" version --short 2>/dev/null || printf 'not installed')"
         printf 'Docker root:    %s\n' "$(docker info --format '{{.DockerRootDir}}')"
     fi
 }
@@ -335,8 +502,9 @@ main() {
             ;;
         install)
             [[ $# -le 2 ]] || die "install 最多接受一个 DATA_DIR 参数"
-            require_root "$@"
+            prepare_mutation "$@"
             install_docker
+            install_docker_compose
             if [[ -n ${2:-} ]]; then
                 migrate_data "$2"
             else
@@ -344,32 +512,38 @@ main() {
                 apply_or_start_docker
             fi
             ;;
+        compose|install-compose)
+            [[ $# -le 2 ]] || die "用法：docker.sh compose [VERSION]"
+            prepare_mutation "$@"
+            install_docker_compose "${2:-}"
+            ;;
         stop)
             [[ $# -eq 1 ]] || die "stop 不接受额外参数"
-            require_root "$@"
+            prepare_mutation "$@"
             stop_docker
             log "Docker 已停止"
             ;;
         start)
             [[ $# -eq 1 ]] || die "start 不接受额外参数"
-            require_root "$@"
+            prepare_mutation "$@"
             start_docker
             ;;
         configure)
             [[ $# -eq 1 ]] || die "configure 不接受额外参数；请使用 migrate DATA_DIR"
-            require_root "$@"
+            prepare_mutation "$@"
             write_daemon_config
             apply_or_start_docker
             ;;
         migrate)
             [[ $# -eq 2 ]] || die "用法：docker.sh migrate DATA_DIR"
-            require_root "$@"
+            prepare_mutation "$@"
             migrate_data "$2"
             ;;
         setup)
             [[ $# -eq 2 ]] || die "用法：docker.sh setup DATA_DIR"
-            require_root "$@"
+            prepare_mutation "$@"
             install_docker
+            install_docker_compose
             migrate_data "$2"
             ;;
         status)

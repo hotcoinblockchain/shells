@@ -30,6 +30,7 @@ Most scripts are designed for Ubuntu servers, with a few scripts also detecting 
 │   ├── auto_parted.sh               # Auto partition, format, mount data disk
 │   ├── cleanup-system-logs.sh       # Rotate and clean system logs by age/size
 │   ├── crontab-backup-restore.sh    # Backup and restore the current user's crontab
+│   ├── fastdir-backup.sh            # Fast tar/zstd directory backup and staged restore
 │   ├── firewalld_rules_manager.sh   # Export and import firewalld configuration
 │   ├── harden_sshd.sh               # Harden sshd password/root login settings
 │   ├── mount-by-uuid.sh             # Persistently mount a block device by UUID
@@ -59,7 +60,7 @@ bash devops/vim_set.sh
 ## Default Install
 
 ```bash
-# install 
+# install
 apt update
 apt install screen supervisor firewalld -y
 apt install glances iftop vnstat -y
@@ -145,6 +146,9 @@ source ~/.bashrc
 
 # Docker
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | bash -s
+
+# Install the latest standalone docker-compose binary in /usr/local/bin
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/docker.sh | sudo bash -s -- compose
 ```
 
 ### Proxy and Security
@@ -181,6 +185,64 @@ curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/update
 ```
 
 ## DevOps Scripts
+
+### Fast Directory Backup
+
+The main dependencies are `zstd`, `rsync`, GNU `tar`, `flock`, and `sha256sum`. On Ubuntu/Debian, normally only the following additional packages are needed; then make the script executable:
+
+```bash
+apt update
+apt install -y zstd rsync
+chmod +x devops/fastdir-backup.sh
+```
+
+Back up the contents of `/root`. `--threads 0` lets zstd use all available CPU cores:
+
+```bash
+./devops/fastdir-backup.sh backup \
+  --source /root \
+  --output /backup/root-2026-08-12.tar.zst \
+  --threads 0
+```
+
+Verify the archive and its generated `.sha256` file:
+
+```bash
+./devops/fastdir-backup.sh verify \
+  --archive /backup/root-2026-08-12.tar.zst
+```
+
+Restore into an empty directory:
+
+```bash
+./devops/fastdir-backup.sh restore \
+  --archive /backup/root-2026-08-12.tar.zst \
+  --dest /restore/root
+```
+
+Merge into an existing `/root` directory; `--merge` is required for non-empty destinations:
+
+```bash
+./devops/fastdir-backup.sh restore \
+  --archive /backup/root-2026-08-12.tar.zst \
+  --dest /root \
+  --merge
+```
+
+Speed-oriented backup with an exclusion:
+
+```bash
+./devops/fastdir-backup.sh backup \
+  --source /root \
+  --output /backup/root.tar.zst \
+  --threads 0 \
+  --level 1 \
+  --exclude '.cache'
+```
+
+Additional options include `--threads 16`, repeatable `--exclude` patterns, `--one-file-system`, compression levels `1` through `19`, and `--staging-dir /data/tmp` for restore extraction on another disk.
+
+The script archives the source directory's contents, generates and requires a SHA-256 sidecar, validates zstd and tar paths before restoring, stages extraction before rsync, preserves ownership, permissions, links, ACLs, xattrs, and sparse files, prevents concurrent jobs with `flock`, rejects `/` as a source or destination, and atomically publishes completed backup files. It uses sequential tar reads with multi-threaded zstd compression; it does not perform parallel file reads.
 
 ### Crontab Backup and Restore
 
