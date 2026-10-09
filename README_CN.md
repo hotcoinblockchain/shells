@@ -17,7 +17,7 @@
 │   ├── git.sh                       # 通过 git-core PPA 安装 Git
 │   ├── go.sh                        # 安装最新或指定版本的 Go
 │   ├── init_tinyproxy_cron.sh       # 添加 tinyproxy 健康检查定时任务
-│   ├── nodejs.sh                    # 通过 NodeSource 安装 Node.js
+│   ├── nodejs.sh                    # 通过 NVM 安装和管理 Node.js
 │   ├── pyenv.sh                     # 安装 pyenv 和 pyenv-virtualenv
 │   ├── rust-cargo.sh                # 通过 rustup 安装 Rust
 │   ├── tinyproxy.sh                 # 安装并配置 tinyproxy
@@ -136,8 +136,11 @@ source /etc/profile
 # Rust
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/rust-cargo.sh | bash -s
 
-# Node.js
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/nodejs.sh | bash -s
+# 通过 NVM 安装 Node.js：下载一次，然后安装指定版本、最新版或最新 LTS
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/nodejs.sh -o /tmp/nodejs.sh
+bash /tmp/nodejs.sh install 20
+bash /tmp/nodejs.sh latest
+bash /tmp/nodejs.sh lts
 
 # pyenv
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/pyenv.sh | bash -s

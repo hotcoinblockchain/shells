@@ -17,7 +17,7 @@ Most scripts are designed for Ubuntu servers, with a few scripts also detecting 
 │   ├── git.sh                       # Install Git from git-core PPA
 │   ├── go.sh                        # Install latest/specified Go version
 │   ├── init_tinyproxy_cron.sh       # Add tinyproxy health-check cron job
-│   ├── nodejs.sh                    # Install Node.js through NodeSource
+│   ├── nodejs.sh                    # Install and manage Node.js through NVM
 │   ├── pyenv.sh                     # Install pyenv and pyenv-virtualenv
 │   ├── rust-cargo.sh                # Install Rust through rustup
 │   ├── tinyproxy.sh                 # Install and configure tinyproxy
@@ -137,8 +137,11 @@ source /etc/profile
 # Rust
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/rust-cargo.sh | bash -s
 
-# Node.js
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/nodejs.sh | bash -s
+# Node.js through NVM: download once, then install a version, latest, or latest LTS
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/nodejs.sh -o /tmp/nodejs.sh
+bash /tmp/nodejs.sh install 20
+bash /tmp/nodejs.sh latest
+bash /tmp/nodejs.sh lts
 
 # pyenv
 curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/pyenv.sh | bash -s

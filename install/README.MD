@@ -63,7 +63,18 @@ curl https://sh.rustup.rs -sSf | sh
 ## nodejs
 
 ```shell
-curl -sSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/nodejs.sh | bash -s 
+# 默认只显示 usage
+curl -fsSL https://raw.githubusercontent.com/hotcoinblockchain/shells/main/install/nodejs.sh \
+  -o /tmp/nodejs.sh
+bash /tmp/nodejs.sh
+
+# 通过 NVM 安装指定 Node.js 版本或版本线
+bash /tmp/nodejs.sh install 20
+bash /tmp/nodejs.sh install 20.18.1
+
+# 安装最新 Node.js 或最新 LTS
+bash /tmp/nodejs.sh latest
+bash /tmp/nodejs.sh lts
 ```
 
 ## pyenv
