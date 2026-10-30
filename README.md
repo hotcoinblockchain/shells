@@ -36,6 +36,8 @@ Most scripts are designed for Ubuntu servers, with a few scripts also detecting 
 │   ├── mount-by-uuid.sh             # Persistently mount a block device by UUID
 │   ├── ulimit_settings.sh           # Raise fd limits and network sysctl values
 │   └── vim_set.sh                   # Add paste-mode helpers to ~/.vimrc
+│   └── security_audit.sh            # ubuntu server audit
+│   └── system_migrate.sh            # linux server bak and migrate
 └── blockchains/
     └── filecoin/
         └── lotus_export_peers.py    # Export lotus peer connect commands

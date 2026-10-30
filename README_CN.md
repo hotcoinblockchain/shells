@@ -36,6 +36,8 @@
 │   ├── mount-by-uuid.sh             # 按 UUID 持久挂载块设备
 │   ├── ulimit_settings.sh           # 调整文件描述符和网络内核参数
 │   └── vim_set.sh                   # 向 ~/.vimrc 添加粘贴模式配置
+│   └── security_audit.sh            # 服务器安全审计
+│   └── system_migrate.sh            # 系统备份
 └── blockchains/
     └── filecoin/
         └── lotus_export_peers.py    # 导出 Lotus 节点连接命令
