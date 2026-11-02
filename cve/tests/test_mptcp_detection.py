@@ -173,5 +173,13 @@ class MptcpTests(unittest.TestCase):
                 audit.atomic_json(link, {})
 
 
+    def test_sysctl_proc_read_uses_small_request(self):
+        from unittest.mock import mock_open
+        stream = mock_open(read_data=b'1\n')
+        with patch('builtins.open', stream):
+            self.assertEqual(audit.read('/proc/sys/net/mptcp/enabled'), '1')
+        stream().read.assert_called_once_with(4096)
+
+
 if __name__ == '__main__':
     unittest.main()

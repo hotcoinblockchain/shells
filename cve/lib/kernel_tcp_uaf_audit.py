@@ -58,7 +58,8 @@ def text(value, limit=1024):
 def read(path, binary=False):
     try:
         with open(str(path), 'rb') as stream:
-            value = stream.read(LIMIT + 1)
+            # proc sysctl handlers may reject oversized reads (ENOMEM/EINVAL).
+            value = stream.read(4096 if str(path).startswith('/proc/sys/') else LIMIT + 1)
         if len(value) > LIMIT:
             return None
         return value if binary else value.decode('utf-8', 'replace').strip()
@@ -114,7 +115,8 @@ def atomic_json(path, value):
         info = ancestor.lstat()
         if info.st_uid not in (0, os.geteuid()) or not stat.S_ISDIR(info.st_mode) or (info.st_mode & 0o022 and
                                              not info.st_mode & stat.S_ISVTX):
-            raise ValueError('unsafe output directory')
+            raise ValueError('unsafe output directory: {} (mode={:04o}, uid={}, gid={})'.format(
+                ancestor, stat.S_IMODE(info.st_mode), info.st_uid, info.st_gid))
     if path.is_symlink() or (path.exists() and not path.is_file()):
         raise ValueError('output must be a regular non-symlink file')
     if path.exists() and path.stat().st_uid != os.geteuid():
@@ -921,6 +923,20 @@ def main(argv=None):
                     atomic_json(output_path, report)
             except Exception:
                 log('ERROR', 'Could not update report; original journal may remain available.')
+            # A local write failure must not suppress already confirmed risk.
+            if report['alert']['status'] == 'NOT_EVALUATED' and should_alert(report, options):
+                try:
+                    if options.dry_run:
+                        report['alert'] = dict(status='DRY_RUN', attempts=0)
+                    elif alert_config_error:
+                        report['alert'] = dict(status='FAILED_CONFIGURATION', attempts=0)
+                    elif webhook:
+                        report['alert'] = send_alert(report, webhook, secret)
+                    else:
+                        report['alert'] = dict(status='NOT_CONFIGURED', attempts=0)
+                    atomic_json(journal, report)
+                except Exception:
+                    log('ERROR', 'Could not send or persist the failure-path alert.')
             print_report(report, options.json)
         detail = str(exc) if type(exc) is ValueError else type(exc).__name__
         log('ERROR', 'Audit failed ({}); no automatic re-enable is performed.'.format(detail))

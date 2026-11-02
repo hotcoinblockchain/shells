@@ -276,7 +276,7 @@ python3 -B -m unittest discover -s cve/tests -p 'test_*.py' -v
 shellcheck cve/linux-kernel-tcp-uaf-audit.sh cve/tests/test-*.sh
 ```
 
-开发环境实际验证：macOS、Python 3.11；50 个离线单元/模拟流程测试通过，Bash 语法检查通过。
+开发环境实际验证：macOS、Python 3.11；51 个离线单元/模拟流程测试通过，Bash 语法检查通过。
 覆盖已修复/受影响/未知内核、Ubuntu 18/20 ESM、HWE/云/OEM、同名包替换未重启、
 MPTCP 开/关/监听进程、缓解成功/失败/非 root/重复运行、旧 ss/空输出、
 容器 cgroup 与桥接过滤、敏感参数脱敏、PID/inode 重用、写前日志失败、
