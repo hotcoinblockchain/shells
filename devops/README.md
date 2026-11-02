@@ -4,6 +4,91 @@
 
 这些脚本可能修改磁盘分区、挂载配置、SSH、firewalld、内核参数或用户配置。生产环境执行前请先检查脚本内容，并确认命令中的设备和文件路径。
 
+## Ubuntu 无交互升级
+
+以下命令适用于 Ubuntu。当前版本的软件包升级与跨 Ubuntu 发行版升级是两个独立步骤。跨版本升级前先备份业务数据和系统配置，并准备云盘快照或控制台访问。
+
+### 当前版本的软件包升级
+
+刷新软件包索引，然后无交互升级当前发行版的软件包：
+
+```bash
+sudo apt-get update && \
+sudo env DEBIAN_FRONTEND=noninteractive apt-get \
+  -o Dpkg::Options::="--force-confdef" \
+  -o Dpkg::Options::="--force-confold" \
+  -y full-upgrade
+```
+
+`DEBIAN_FRONTEND=noninteractive` 让 debconf 使用默认答案；`-y` 自动确认 apt 提示。`--force-confdef` 在配置文件冲突时采用默认策略；没有默认策略时，`--force-confold` 保留现有配置。`full-upgrade` 可能为解决依赖关系移除软件包。
+
+升级后先预览不再需要的软件包，再按需清理：
+
+```bash
+sudo apt-get --simulate autoremove
+sudo env DEBIAN_FRONTEND=noninteractive apt-get -y autoremove
+```
+
+### 跨 Ubuntu 发行版升级
+
+先完成上面的软件包升级，并安装发行版升级器。`do-release-upgrade: command not found` 通常可通过安装此包解决：
+
+```bash
+sudo env DEBIAN_FRONTEND=noninteractive apt-get \
+  -o Dpkg::Options::="--force-confdef" \
+  -o Dpkg::Options::="--force-confold" \
+  -y install ubuntu-release-upgrader-core
+
+do-release-upgrade --help
+cat /etc/update-manager/release-upgrades
+```
+
+LTS 服务器应确认 `/etc/update-manager/release-upgrades` 中设置为 `Prompt=lts`。检查是否需要先重启，以及当前可用的升级目标：
+
+```bash
+if [ -f /var/run/reboot-required ]; then
+  cat /var/run/reboot-required
+fi
+sudo do-release-upgrade --check-dist-upgrade-only
+```
+
+如当前系统要求重启，先安排重启并重新登录，再开始下一步。执行非交互发行版升级：
+
+```bash
+sudo env DEBIAN_FRONTEND=noninteractive \
+  do-release-upgrade -f DistUpgradeViewNonInteractive
+```
+
+上面 apt 命令的 `Dpkg::Options` 仅作用于各自的 apt 调用，不会自动传递到 `do-release-upgrade`。非交互前端也不能保证所有软件包安装脚本都不会提示；升级可能重启服务并中断 SSH 连接。不要为了消除提示盲目添加 `-d`，它用于检查开发版升级。
+
+LTS 跨版本升级按相邻版本逐级进行，例如 `18.04 → 20.04 → 22.04 → 24.04 → 26.04`；实际可用目标以升级器检查结果为准。每一级成功后安排重启，确认版本和业务服务正常，再继续下一级：
+
+```bash
+# 确认升级成功并安排好维护窗口后执行
+sudo reboot
+
+# 重启后重新登录检查
+cat /etc/os-release
+uname -r
+systemctl --failed
+```
+
+### 升级故障排查
+
+出现失败或 `Segmentation fault` 时先查看升级日志和内核日志：
+
+```bash
+sudo tail -n 100 /var/log/dist-upgrade/main.log
+sudo tail -n 100 /var/log/dist-upgrade/apt.log
+sudo journalctl -k -n 100 --no-pager
+sudo dpkg --audit
+apt-mark showhold
+df -h / /tmp
+df -i / /tmp
+```
+
+参考：[分享中的 Ubuntu 无交互升级讨论](https://chatgpt.com/share/6ac8a76d-7ddc-83ec-b742-7837409fb8a3)、[Ubuntu Server 升级指南](https://documentation.ubuntu.com/server/how-to/software/upgrade-your-release/)。
+
 ## Disk Partition and Mount
 
 自动识别 `/dev/nvme1n1` 或 `/dev/vdb`，分区、格式化为 ext4，并挂载到 `/coins`：
