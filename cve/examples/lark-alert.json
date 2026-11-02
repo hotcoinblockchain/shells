@@ -1,0 +1,21 @@
+{
+  "msg_type": "interactive",
+  "card": {
+    "header": {
+      "template": "red",
+      "title": {
+        "tag": "plain_text",
+        "text": "Linux Kernel TCP UAF 安全风险告警"
+      }
+    },
+    "elements": [
+      {
+        "tag": "div",
+        "text": {
+          "tag": "plain_text",
+          "content": "已确认内核受影响\n主机: node-example / 实例: configured-instance-example\n系统: Ubuntu 24.04\n运行内核: 6.8.0-147-generic\nIP: 100.64.0.5\nCVE-2026-98432: VULNERABLE\n依据: Running package linux-image-6.8.0-147-generic 6.8.0-147.147, source linux 6.8.0-147.147; Canonical OpenVEX v14: exact source PURL classified affected (noble).\nMPTCP: ENABLED → DISABLED\n缓解结果: SUCCESS\n确认 MPTCP 进程: 1\nSocket 检测: AVAILABLE; 监听覆盖: SUPPORTED_BASELINE; 未归属 Socket: 0\ngeth PID=123 exe=/usr/bin/geth 监听=0.0.0.0:30303\n时间: 2026-11-02T00:00:00+00:00\n规则: 2026-11-02.1\n临时关闭 MPTCP 不会保证现有 Socket 消失；相关进程可能需要人工滚动重启。\n关闭 MPTCP 不等于修复内核；请安装发行版修复内核并按维护流程重启验证。\n本脚本不写 sysctl 持久配置；系统重启后该设置可能恢复。\n检测和缓解仅覆盖当前网络命名空间；容器的其他网络命名空间需分别巡检。"
+        }
+      }
+    ]
+  }
+}

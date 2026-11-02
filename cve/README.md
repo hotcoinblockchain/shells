@@ -2,6 +2,19 @@
 
 Scripts in this directory are for urgent security maintenance and CVE patching.
 
+## Linux Kernel TCP UAF / MPTCP
+
+[`linux-kernel-tcp-uaf-audit.sh`](linux-kernel-tcp-uaf-audit.sh) audits
+CVE-2026-98432 using bundled offline vendor rules. Its default mode temporarily
+disables MPTCP in the current network namespace. Start with a read-only check:
+
+```bash
+bash cve/linux-kernel-tcp-uaf-audit.sh --check-only --no-alert
+```
+
+Deploy the adjacent `lib/` and `rules/` directories together with the launcher.
+See [the usage, verified sources, download verification and test limitations](kernel-tcp-uaf-README.md).
+
 ## Nginx Security Patch Update
 
 Update currently installed nginx packages to the latest security patched version

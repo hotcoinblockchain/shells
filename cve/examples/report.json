@@ -1,0 +1,282 @@
+{
+  "address_scope": "HOST_INTERFACE_CANDIDATES",
+  "address_source": "ip-json",
+  "alert": {
+    "attempts": 0,
+    "status": "NOT_CONFIGURED"
+  },
+  "alert_configuration_valid": true,
+  "architecture": "x86_64",
+  "audit_errors": [],
+  "audit_time": "2026-11-02T00:00:00+00:00",
+  "cve_id": "CVE-2026-98432",
+  "example_only": true,
+  "exit_code": 1,
+  "hostname": "node-example",
+  "instance_id": "configured-instance-example",
+  "instance_id_source": "explicit_configuration",
+  "issues": [],
+  "journal_path": "/var/tmp/kernel-tcp-uaf-audit/audit-EXAMPLE.json",
+  "kernel_detection": {
+    "evidence": [
+      "Running package linux-image-6.8.0-147-generic 6.8.0-147.147, source linux 6.8.0-147.147; Canonical OpenVEX v14: exact source PURL classified affected (noble)."
+    ],
+    "matched_rule": "ubuntu-noble-linux-6.8.0-147.147",
+    "sources": [
+      "https://ubuntu.com/security/CVE-2026-98432"
+    ],
+    "status": "VULNERABLE"
+  },
+  "kernel_flavour": "generic",
+  "kernel_packages": [
+    {
+      "maintainer": "Ubuntu Kernel Team",
+      "name": "linux-image-6.8.0-147-generic",
+      "running_build_verified": true,
+      "source": "linux",
+      "source_version": "6.8.0-147.147",
+      "version": "6.8.0-147.147"
+    }
+  ],
+  "kernel_status": "VULNERABLE",
+  "kernel_version": "6.8.0-147-generic",
+  "mptcp_after": "DISABLED",
+  "mptcp_before": "ENABLED",
+  "mptcp_config_after": {
+    "consistent": true,
+    "proc_value": "0",
+    "state": "DISABLED",
+    "support": "SUPPORTED",
+    "sysctl_available": true,
+    "sysctl_value": "0"
+  },
+  "mptcp_config_before": {
+    "consistent": true,
+    "proc_value": "1",
+    "state": "ENABLED",
+    "support": "SUPPORTED",
+    "sysctl_available": true,
+    "sysctl_value": "1"
+  },
+  "mptcp_processes": [
+    {
+      "cmdline_redacted": "[ALL_ARGUMENTS_REDACTED; argc=3]",
+      "container_id": null,
+      "container_status": "UNKNOWN",
+      "exe": "/usr/bin/geth",
+      "go_version": null,
+      "issues": [],
+      "listen_addresses": [
+        {
+          "address": "0.0.0.0",
+          "port": 30303
+        }
+      ],
+      "listening": true,
+      "name": "geth",
+      "pid": 123,
+      "ppid": 1,
+      "sockets": [
+        {
+          "cookie": [
+            101,
+            202
+          ],
+          "evidence": "NETLINK_SOCK_DIAG / INET_DIAG_REQ_PROTOCOL=262",
+          "family": "IPv4",
+          "inode": 12345,
+          "local_address": "0.0.0.0",
+          "local_port": 30303,
+          "remote_address": "0.0.0.0",
+          "remote_port": 0,
+          "state": "LISTEN",
+          "uid": 1000
+        }
+      ],
+      "starttime_ticks": "9001",
+      "systemd_service": "geth.service",
+      "user": "node"
+    }
+  ],
+  "mutation_attempted": true,
+  "network_namespace": "net:[EXAMPLE]",
+  "os_name": "Ubuntu",
+  "os_release": {
+    "ID": "ubuntu",
+    "NAME": "Ubuntu",
+    "VERSION_CODENAME": "noble",
+    "VERSION_ID": "24.04"
+  },
+  "os_version": "24.04",
+  "primary_interface": "eth0",
+  "primary_private_ip": "100.64.0.5",
+  "private_ips": [
+    "100.64.0.5"
+  ],
+  "proc_version": "Linux version 6.8.0-147-generic (example)",
+  "reboot_required": false,
+  "remediation_status": "SUCCESS",
+  "rollback": {
+    "automatic": false,
+    "command": "sysctl -w net.mptcp.enabled=1",
+    "original_value": 1,
+    "reason": "Re-enabling restores exposure; operator decision required."
+  },
+  "rule_updated_at": "2026-11-02T00:00:00+08:00",
+  "rule_version": "2026-11-02.1",
+  "rules_sha256": "764029ffe6a149c315c6b27754469b2331ca8d25f4c5491faf73d410cec6720a",
+  "schema_version": 1,
+  "socket_detection_after": {
+    "issues": [],
+    "listener_coverage": "SUPPORTED_BASELINE",
+    "method": "NETLINK_SOCK_DIAG",
+    "processes": [
+      {
+        "cmdline_redacted": "[ALL_ARGUMENTS_REDACTED; argc=3]",
+        "container_id": null,
+        "container_status": "UNKNOWN",
+        "exe": "/usr/bin/geth",
+        "go_version": null,
+        "issues": [],
+        "listen_addresses": [
+          {
+            "address": "0.0.0.0",
+            "port": 30303
+          }
+        ],
+        "listening": true,
+        "name": "geth",
+        "pid": 123,
+        "ppid": 1,
+        "sockets": [
+          {
+            "cookie": [
+              101,
+              202
+            ],
+            "evidence": "NETLINK_SOCK_DIAG / INET_DIAG_REQ_PROTOCOL=262",
+            "family": "IPv4",
+            "inode": 12345,
+            "local_address": "0.0.0.0",
+            "local_port": 30303,
+            "remote_address": "0.0.0.0",
+            "remote_port": 0,
+            "state": "LISTEN",
+            "uid": 1000
+          }
+        ],
+        "starttime_ticks": "9001",
+        "systemd_service": "geth.service",
+        "user": "node"
+      }
+    ],
+    "scope": "CURRENT_NETWORK_NAMESPACE",
+    "sockets": [
+      {
+        "cookie": [
+          101,
+          202
+        ],
+        "evidence": "NETLINK_SOCK_DIAG / INET_DIAG_REQ_PROTOCOL=262",
+        "family": "IPv4",
+        "inode": 12345,
+        "local_address": "0.0.0.0",
+        "local_port": 30303,
+        "remote_address": "0.0.0.0",
+        "remote_port": 0,
+        "state": "LISTEN",
+        "uid": 1000
+      }
+    ],
+    "ss_mptcp_command_ok": true,
+    "ss_version": "ss utility, iproute2-6.1.0",
+    "status": "AVAILABLE",
+    "unattributed_sockets": []
+  },
+  "socket_detection_before": {
+    "issues": [],
+    "listener_coverage": "SUPPORTED_BASELINE",
+    "method": "NETLINK_SOCK_DIAG",
+    "processes": [
+      {
+        "cmdline_redacted": "[ALL_ARGUMENTS_REDACTED; argc=3]",
+        "container_id": null,
+        "container_status": "UNKNOWN",
+        "exe": "/usr/bin/geth",
+        "go_version": null,
+        "issues": [],
+        "listen_addresses": [
+          {
+            "address": "0.0.0.0",
+            "port": 30303
+          }
+        ],
+        "listening": true,
+        "name": "geth",
+        "pid": 123,
+        "ppid": 1,
+        "sockets": [
+          {
+            "cookie": [
+              101,
+              202
+            ],
+            "evidence": "NETLINK_SOCK_DIAG / INET_DIAG_REQ_PROTOCOL=262",
+            "family": "IPv4",
+            "inode": 12345,
+            "local_address": "0.0.0.0",
+            "local_port": 30303,
+            "remote_address": "0.0.0.0",
+            "remote_port": 0,
+            "state": "LISTEN",
+            "uid": 1000
+          }
+        ],
+        "starttime_ticks": "9001",
+        "systemd_service": "geth.service",
+        "user": "node"
+      }
+    ],
+    "scope": "CURRENT_NETWORK_NAMESPACE",
+    "sockets": [
+      {
+        "cookie": [
+          101,
+          202
+        ],
+        "evidence": "NETLINK_SOCK_DIAG / INET_DIAG_REQ_PROTOCOL=262",
+        "family": "IPv4",
+        "inode": 12345,
+        "local_address": "0.0.0.0",
+        "local_port": 30303,
+        "remote_address": "0.0.0.0",
+        "remote_port": 0,
+        "state": "LISTEN",
+        "uid": 1000
+      }
+    ],
+    "ss_mptcp_command_ok": true,
+    "ss_version": "ss utility, iproute2-6.1.0",
+    "status": "AVAILABLE",
+    "unattributed_sockets": []
+  },
+  "socket_diff": {
+    "after_count": 1,
+    "appeared_count": 0,
+    "before_count": 1,
+    "comparable": true,
+    "disappeared_count": 0
+  },
+  "ubuntu_pro": {
+    "attached": null,
+    "available": false,
+    "esm_services": []
+  },
+  "version_signature": "Ubuntu 6.8.0-147.147-generic 6.8.12",
+  "warnings": [
+    "临时关闭 MPTCP 不会保证现有 Socket 消失；相关进程可能需要人工滚动重启。",
+    "关闭 MPTCP 不等于修复内核；请安装发行版修复内核并按维护流程重启验证。",
+    "本脚本不写 sysctl 持久配置；系统重启后该设置可能恢复。",
+    "检测和缓解仅覆盖当前网络命名空间；容器的其他网络命名空间需分别巡检。"
+  ]
+}
