@@ -7,6 +7,8 @@ TEMP_FILE=""
 BACKUP_FILE=""
 HAD_CONFIG=false
 CONFIG_CHANGED=false
+OS_FAMILY=""
+PACKAGE_MANAGER=""
 
 log() {
     printf '[fail2ban.sh] %s\n' "$*"
@@ -28,16 +30,61 @@ require_root() {
     [[ ${EUID} -eq 0 ]] || die "请使用 root 执行"
 }
 
-install_package() {
-    if dpkg-query -W -f='${db:Status-Abbrev}' fail2ban 2>/dev/null | grep -q '^ii'; then
-        log "fail2ban 已安装，跳过 apt 安装"
-        return
-    fi
+# Use ID_LIKE as well as ID: Alibaba Cloud Linux commonly uses ID=alinux.
+detect_system() {
+    [[ -r /etc/os-release ]] || die "无法读取 /etc/os-release，无法识别系统"
+    local ID="" ID_LIKE="" PRETTY_NAME="" VERSION_ID=""
+    # shellcheck source=/dev/null
+    . /etc/os-release
+    case " ${ID} ${ID_LIKE} " in
+        *" debian "*|*" ubuntu "*)
+            OS_FAMILY=debian
+            PACKAGE_MANAGER=apt-get
+            command -v dpkg-query >/dev/null 2>&1 || die "缺少 dpkg-query 命令"
+            ;;
+        *" rhel "*|*" centos "*|*" fedora "*|*" rocky "*|*" almalinux "*|*" ol "*|*" alinux "*|*" aliyun "*)
+            OS_FAMILY=rhel
+            if command -v dnf >/dev/null 2>&1; then
+                PACKAGE_MANAGER=dnf
+            elif command -v yum >/dev/null 2>&1; then
+                PACKAGE_MANAGER=yum
+            else
+                die "Red Hat 系统缺少 dnf 或 yum"
+            fi
+            command -v rpm >/dev/null 2>&1 || die "缺少 rpm 命令"
+            ;;
+        *) die "暂不支持此系统：${PRETTY_NAME:-${ID:-unknown}}" ;;
+    esac
+    command -v "${PACKAGE_MANAGER}" >/dev/null 2>&1 || die "缺少 ${PACKAGE_MANAGER} 命令"
+    command -v systemctl >/dev/null 2>&1 || die "需要 systemd（systemctl）"
+    log "检测到系统：${PRETTY_NAME:-${ID}} ${VERSION_ID}，使用 ${PACKAGE_MANAGER}"
+}
 
-    log "安装 fail2ban..."
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get update
-    apt-get install -y fail2ban
+install_package() {
+    if [[ ${OS_FAMILY} == debian ]]; then
+        if dpkg-query -W -f='${db:Status-Abbrev}' fail2ban 2>/dev/null | grep -q '^ii'; then
+            log "fail2ban 已安装，跳过 apt 安装"
+            return
+        fi
+        log "安装 fail2ban..."
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update
+        apt-get install -y fail2ban
+    else
+        if rpm -q fail2ban fail2ban-systemd >/dev/null 2>&1; then
+            log "fail2ban 及 systemd 后端已安装，跳过 RPM 安装"
+            return
+        fi
+        # Prefer configured vendor repositories, including Alibaba Cloud mirrors.
+        # Never infer an EPEL release from Alibaba Cloud Linux's VERSION_ID.
+        if ! "${PACKAGE_MANAGER}" -y install fail2ban fail2ban-systemd; then
+            log "当前仓库安装失败，尝试安装系统提供的 epel-release 后重试"
+            "${PACKAGE_MANAGER}" -y install epel-release ||
+                die "无法安装 epel-release，请先配置适用于本系统的 EPEL/扩展仓库（RHEL 可能还需启用 CodeReady Builder）"
+            "${PACKAGE_MANAGER}" -y install fail2ban fail2ban-systemd ||
+                die "安装 fail2ban 失败，请检查系统仓库、扩展仓库依赖及网络；CentOS 旧版可能需要有效的归档源"
+        fi
+    fi
 }
 
 build_config() {
@@ -51,6 +98,10 @@ bantime = 1h
 findtime = 10m
 maxretry = 5
 EOF
+    if [[ ${OS_FAMILY} == rhel ]]; then
+        # Read sshd journal entries even when rsyslog does not create /var/log/secure.
+        printf 'backend = systemd\n' >> "${TEMP_FILE}"
+    fi
     chmod 0644 "${TEMP_FILE}"
 }
 
@@ -108,12 +159,13 @@ apply_config() {
 main() {
     require_root
     command -v flock >/dev/null 2>&1 || die "缺少 flock 命令"
-    install_package
+    detect_system
 
     install -d -o root -g root -m 0755 "$(dirname "${CONF_FILE}")"
     exec 9>"${CONF_FILE}.lock"
     flock -n 9 || die "已有另一个 fail2ban 配置进程正在运行"
 
+    install_package
     build_config
     install_config
     apply_config
