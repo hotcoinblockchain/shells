@@ -1,6 +1,6 @@
 # Linux Kernel TCP UAF 巡检与 MPTCP 临时缓解
 
-入口：`linux-kernel-tcp-uaf-audit.sh`。目标漏洞为 **CVE-2026-98432**。
+入口：`cve_2026_98432_kernel-tcp-uaf-audit.sh`。目标漏洞为 **CVE-2026-98432**。
 默认行为等同 `--disable-mptcp`：先采集和保存证据，再临时关闭**当前网络命名空间**的 MPTCP。
 首次部署建议使用 `--check-only --no-alert` 核对结果。
 
@@ -8,7 +8,7 @@
 
 ```text
 cve/
-  linux-kernel-tcp-uaf-audit.sh
+  cve_2026_98432_kernel-tcp-uaf-audit.sh
   lib/kernel_tcp_uaf_audit.py
   rules/kernel-tcp-uaf.json
   SHA256SUMS
@@ -125,15 +125,15 @@ Livepatch 不被自动视为该 CVE 的修复证明；需要人工根据厂商�
 在仓库根目录执行：
 
 ```bash
-bash cve/linux-kernel-tcp-uaf-audit.sh --check-only --no-alert
+bash cve/cve_2026_98432_kernel-tcp-uaf-audit.sh --check-only --no-alert
 
-sudo bash cve/linux-kernel-tcp-uaf-audit.sh \
+sudo bash cve/cve_2026_98432_kernel-tcp-uaf-audit.sh \
   --disable-mptcp \
   --lark-webhook-file /etc/security/lark-webhook \
   --lark-secret-file /etc/security/lark-secret \
   --output /var/log/kernel-tcp-uaf-audit.json
 
-sudo bash cve/linux-kernel-tcp-uaf-audit.sh --dry-run --json --no-alert
+sudo bash cve/cve_2026_98432_kernel-tcp-uaf-audit.sh --dry-run --json --no-alert
 ```
 
 | 参数 | 行为 |
@@ -233,6 +233,11 @@ sudo sysctl -w net.mptcp.enabled=1
 
 ## 固定 GitHub Commit 与 SHA256 下载
 
+本节命令适用于保留旧入口名 `linux-kernel-tcp-uaf-audit.sh` 的历史 commit，
+与当前 `SHA256SUMS`、云助手入口内嵌清单一致。当前入口已改名为
+`cve_2026_98432_kernel-tcp-uaf-audit.sh`；不要混用当前文件名与历史清单。
+当前分支的 curl 下载示例见[目录 README](README.md#1-内核-tcp-uaf--mptcp-巡检)。
+
 禁止 `curl | bash`，不要未经校验执行最新分支。
 从可信发布渠道取得 **40 位 commit** 与该版本 **SHA256SUMS 自身的预期 SHA256**，替换下列占位值。
 清单覆盖全部三个运行文件，核验入口本身不够。
@@ -268,12 +273,12 @@ sudo bash "$bundle/linux-kernel-tcp-uaf-audit.sh" \
 ## 验证与限制
 
 ```bash
-bash -n cve/linux-kernel-tcp-uaf-audit.sh
+bash -n cve/cve_2026_98432_kernel-tcp-uaf-audit.sh
 bash cve/tests/test-kernel-detection.sh
 bash cve/tests/test-mptcp-detection.sh
 bash cve/tests/test-lark-alert.sh
 python3 -B -m unittest discover -s cve/tests -p 'test_*.py' -v
-shellcheck cve/linux-kernel-tcp-uaf-audit.sh cve/tests/test-*.sh
+shellcheck cve/cve_2026_98432_kernel-tcp-uaf-audit.sh cve/tests/test-*.sh
 ```
 
 开发环境实际验证：macOS、Python 3.11；51 个离线单元/模拟流程测试通过，Bash 语法检查通过。
