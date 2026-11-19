@@ -113,7 +113,7 @@ sudo bash cve_2026_98432_kernel_upgrade.sh --upgrade --reboot
 | --- | --- |
 | `--check` / `MODE=check` | 查询运行内核、包及仓库信息，不安装包；可能访问软件源或刷新查询缓存 |
 | `--upgrade` / `MODE=upgrade` | 默认模式，刷新软件包索引并升级映射的内核包，需要 root |
-| `--reboot` / `REBOOT=yes` | 仅升级模式下请求自动重启；默认 `REBOOT=no` |
+| `--reboot` / `REBOOT=yes` | 仅升级模式下请求自动重启；当前已修复则不重启，未确认修复内核已安装且为可读的 grubby 默认启动项时拒绝自动重启；默认 `REBOOT=no` |
 | `--help` | 显示帮助 |
 
 - Ubuntu 仅为脚本中明确映射的发行版、generic/HWE 分支选择元包；未知内核类型拒绝自动选包。
@@ -122,6 +122,20 @@ sudo bash cve_2026_98432_kernel_upgrade.sh --upgrade --reboot
   Debian 当前映射到 `linux-image-amd64`，不能用于其他架构的自动选包。
 - 无匹配修复门槛时状态为 `UNKNOWN`；能更新包不代表已确认修复。检查模式退出 `0` 也不等于安全。
 - 不添加或切换软件源，不删除旧内核；包升级没有自动回滚。默认不重启，重启后须核对 `uname -r`、启动项及厂商公告。
+
+最终结果将当前运行内核、已安装修复内核、默认启动内核分开报告：
+
+| 最终状态 | 含义与后续操作 |
+| --- | --- |
+| `RUNNING_FIXED` | 当前已运行达到本 CVE 修复门槛的内核，无需为本 CVE 再次重启 |
+| `FIX_INSTALLED_REBOOT_REQUIRED` | 当前运行内核仍受影响，修复内核已安装；确认默认启动项后安排重启 |
+| `VULNERABLE_NO_FIX_INSTALLED` | 当前运行内核仍受影响，未确认安装匹配修复内核；需先安装再重启 |
+| `UNKNOWN` | 无匹配规则或可靠比较，无法确认漏洞状态；不能将包管理器执行成功当作修复完成 |
+
+例如 Alibaba Cloud Linux 3 的运行内核、已安装版本和默认启动项均为
+`5.10.134-19.10.al8.x86_64` 时，最终结论为 `RUNNING_FIXED`。
+对应门槛见[阿里云官方修复公告](https://help.aliyun.com/en/alinux/product-overview/cve-2026-98432-vulnerability-announcement)。
+标准版与 Pro 分支分别判断，不混用修复门槛。此结论仅覆盖本 CVE。
 
 ## 3. NGINX HTTP/2 检查、关闭与告警
 
