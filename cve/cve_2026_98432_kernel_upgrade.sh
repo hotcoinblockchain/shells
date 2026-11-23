@@ -10,7 +10,14 @@ OS_ID="" OS_VERSION="" FAMILY="" FLAVOR="" PKG="" FIX="" STATUS="UNKNOWN"
 RUNNING="$(uname -r)"; INSTALLED_KERNELS=""; FIXED_INSTALLED=""; NEXT_STATUS="UNKNOWN"; NEXT_KERNEL=""; NEXT_CONFIDENCE="unknown"
 log(){ local lvl="$1"; shift; printf '%s [%s] %s\n' "$(date '+%F %T%z')" "$lvl" "$*"; }
 die(){ log ERROR "$*" >&2; exit 1; }
-on_err(){ local rc="$1" line="$2"; log ERROR "执行失败: line=$line exit=$rc; 请检查上方包管理器输出" >&2; exit "$rc"; }
+on_err(){
+  local rc="$1" line="$2"
+  # Command substitutions inherit ERR; let the parent log the failure once.
+  if (( BASH_SUBSHELL == 0 )); then
+    log ERROR "执行失败: line=$line exit=$rc; 请检查上方包管理器输出" >&2
+  fi
+  exit "$rc"
+}
 trap 'on_err "$?" "$LINENO"' ERR
 usage(){ cat <<USAGE
 Usage: sudo bash cve_2026_98432_kernel_upgrade.sh [--check|--upgrade] [--reboot]
@@ -91,6 +98,31 @@ print_summary() {
   log INFO "判定仅针对本 CVE 的内置厂商版本规则，不代表内核不存在其他漏洞。"
 }
 
+upgrade_debian_kernel() {
+  local policy cand installed_status
+  log INFO "刷新正式 APT 软件包索引（不自动更改软件源）"
+  apt-get update
+  log INFO "检查 APT 候选版本与来源:"
+  # Read the producer completely before parsing. An early awk exit or grep -q
+  # in a pipe can SIGPIPE apt-cache and abort under pipefail (exit 141).
+  policy="$(LC_ALL=C apt-cache policy "$PKG")"
+  printf '%s\n' "$policy"
+  cand="$(LC_ALL=C awk '$1 == "Candidate:" && !found {print $2; found=1}' <<< "$policy")"
+  [[ -n "$cand" && "$cand" != '(none)' ]] || die "无可用候选版本"
+  log INFO "APT 候选版本=$cand"
+  if grep -Eq '[[:space:]][^[:space:]/]+-proposed/' <<< "$policy"; then
+    log WARN "检测到系统启用 proposed 仓库；请禁用 proposed 后重试，避免误选测试内核"
+    die "拒绝在启用 proposed 的环境升级"
+  fi
+  log INFO "执行 apt-get install --only-upgrade (若未安装元包则正常 install)"
+  installed_status="$(dpkg-query -W -f='${Status}' "$PKG" 2>/dev/null)" || installed_status=""
+  if [[ "$installed_status" == 'install ok installed' ]]; then
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --only-upgrade "$PKG"
+  else
+    DEBIAN_FRONTEND=noninteractive apt-get install -y "$PKG"
+  fi
+}
+
 for arg in "$@"; do case "$arg" in --check) MODE=check;; --upgrade) MODE=upgrade;; --reboot) REBOOT=yes;; -h|--help) usage; exit 0;; *) die "未知参数: $arg";; esac; done
 [[ "$MODE" == check || "$MODE" == upgrade ]] || die "MODE 仅支持 check/upgrade"
 [[ "$REBOOT" == yes || "$REBOOT" == no ]] || die "REBOOT 仅支持 yes/no"
@@ -167,25 +199,7 @@ if [[ "$FAMILY" == debian && -n "$PKG" ]]; then
   log INFO "当前元包信息:"
   dpkg-query -W -f='${Package} ${Version} ${Status}\n' "$PKG" 2>/dev/null || true
   if [[ "$MODE" == upgrade ]]; then
-    log INFO "刷新正式 APT 软件包索引（不自动更改软件源）"
-    apt-get update
-    log INFO "检查 APT 候选版本与来源:"
-    apt-cache policy "$PKG"
-    cand="$(apt-cache policy "$PKG" | awk '/Candidate:/{print $2;exit}')"
-    [[ -n "$cand" && "$cand" != '(none)' ]] || die "无可用候选版本"
-    # Refuse proposed candidates; apt-cache policy includes candidate and its origin lines.
-    if apt-cache policy "$PKG" | grep -E '^[[:space:]]+\*\*\* ' | grep -q proposed; then die "检测到 proposed 候选，拒绝"; fi
-    # Check candidate source via apt-cache madison and apt policy version table, excluding proposed-only candidates.
-    if apt-cache policy "$PKG" | grep -qE '[[:space:]](jammy|noble|resolute)-proposed/'; then
-      log WARN "检测到系统启用 proposed 仓库；请禁用 proposed 后重试，避免误选测试内核"
-      die "拒绝在启用 proposed 的环境升级"
-    fi
-    log INFO "执行 apt-get install --only-upgrade (若未安装元包则正常 install)"
-    if dpkg-query -W -f='${Status}' "$PKG" 2>/dev/null | grep -qx 'install ok installed'; then
-      DEBIAN_FRONTEND=noninteractive apt-get install -y --only-upgrade "$PKG"
-    else
-      DEBIAN_FRONTEND=noninteractive apt-get install -y "$PKG"
-    fi
+    upgrade_debian_kernel
   else
     apt-cache policy "$PKG" || true
   fi
